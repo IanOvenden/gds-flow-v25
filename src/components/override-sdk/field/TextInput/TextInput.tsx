@@ -46,7 +46,7 @@ export default function TextInput(props: TextInputProps) {
 
   return (
     <>
-      <div className='govuk-form-group'>
+      <div className={'govuk-form-group' + (validatemessage ? ' govuk-form-group--error' : '')}>
         {!hideLabel ? (
           <h1 className='govuk-label-wrapper'>
             <label className='govuk-label govuk-label--l' htmlFor='event-name'>
@@ -68,7 +68,7 @@ export default function TextInput(props: TextInputProps) {
         <input
           required={required}
           placeholder={placeholder ? placeholder : undefined}
-          className={'govuk-input' + (validatemessage ? ' error' : '')}
+          className={'govuk-input' + (validatemessage ? ' govuk-input--error' : '')}
           id='event-name'
           name='eventName'
           type='text'
