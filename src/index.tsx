@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import TopLevelApp from '../src/samples/TopLevelApp';
 import './common.css';
+import '../assets/css/gdsStyles.scss';
 
 const outletElement = document.getElementById('outlet');
 

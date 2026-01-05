@@ -161,7 +161,19 @@ module.exports = (env, argv) => {
         },
         {
           test: /\.s[a|c]ss$/,
-          use: [{ loader: 'style-loader' }, { loader: 'css-loader' }, { loader: 'sass-loader' }]
+          use: [
+            { loader: 'style-loader' },
+            { loader: 'css-loader' },
+            {
+              loader: 'sass-loader',
+              options: {
+                sassOptions: {
+                  silenceDeprecations: ['import', 'legacy-js-api'],
+                  quietDeps: true // Suppress warnings from dependencies
+                }
+              }
+            }
+          ]
         },
         { test: /\.(png|gif|jpg|cur)$/i, loader: 'url-loader', options: { limit: 8192 } },
         {
