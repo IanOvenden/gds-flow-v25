@@ -1,6 +1,7 @@
 // Statically load all "local" components that aren't yet in the npm package
 // import MediaCoTodo from '@pega/react-sdk-components/lib/mediaco/ToDo';
 
+import TextInput from './src/components/override-sdk/field/TextInput/';
 /* import end - DO NOT REMOVE */
 
 // localSdkComponentMap is the JSON object where we'll store the components that are
@@ -8,6 +9,7 @@
 
 const localSdkComponentMap = {
   // Todo: MediaCoTodo,
+  TextInput: TextInput
   /* map end - DO NOT REMOVE */
 };
 
