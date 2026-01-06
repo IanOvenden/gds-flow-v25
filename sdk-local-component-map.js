@@ -2,6 +2,7 @@
 // import MediaCoTodo from '@pega/react-sdk-components/lib/mediaco/ToDo';
 
 import TextInput from './src/components/override-sdk/field/TextInput/';
+import Dropdown from './src/components/override-sdk/field/Dropdown/';
 /* import end - DO NOT REMOVE */
 
 // localSdkComponentMap is the JSON object where we'll store the components that are
@@ -9,7 +10,8 @@ import TextInput from './src/components/override-sdk/field/TextInput/';
 
 const localSdkComponentMap = {
   // Todo: MediaCoTodo,
-  TextInput: TextInput
+  TextInput: TextInput,
+  Dropdown: Dropdown
   /* map end - DO NOT REMOVE */
 };
 
