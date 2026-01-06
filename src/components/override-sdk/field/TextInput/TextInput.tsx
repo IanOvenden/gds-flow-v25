@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getComponentFromMap } from '@pega/react-sdk-components/lib/bridge/helpers/sdk_component_map';
+import handleEvent from '@pega/react-sdk-components/lib/components/helpers/event-utils';
 import type { PConnFieldProps } from '@pega/react-sdk-components/lib/types/PConnProps';
 
 interface TextInputProps extends PConnFieldProps {
@@ -26,9 +27,9 @@ export default function TextInput(props: TextInputProps) {
     placeholder
   } = props;
 
-  // const pConn = getPConnect();
-  // const actions = pConn.getActionsApi();
-  // const propName = (pConn.getStateProps() as any).value;
+  const pConn = getPConnect();
+  const actions = pConn.getActionsApi();
+  const propName = (pConn.getStateProps() as any).value;
   const [inputValue, setInputValue] = useState('');
 
   useEffect(() => {
@@ -38,6 +39,10 @@ export default function TextInput(props: TextInputProps) {
   function handleChange(event) {
     // update internal value
     setInputValue(event?.target?.value);
+  }
+
+  function handleBlur() {
+    handleEvent(actions, 'changeNblur', propName, inputValue);
   }
 
   if (displayMode === 'DISPLAY_ONLY') {
@@ -75,6 +80,7 @@ export default function TextInput(props: TextInputProps) {
           disabled={disabled}
           onChange={handleChange}
           value={inputValue}
+          onBlur={!readOnly ? handleBlur : undefined}
         />
       </div>
     </>
