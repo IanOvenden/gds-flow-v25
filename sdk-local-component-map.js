@@ -3,6 +3,7 @@
 
 import TextInput from './src/components/override-sdk/field/TextInput/';
 import Dropdown from './src/components/override-sdk/field/Dropdown/';
+import RadioButtons from './src/components/override-sdk/field/RadioButtons/';
 /* import end - DO NOT REMOVE */
 
 // localSdkComponentMap is the JSON object where we'll store the components that are
@@ -11,7 +12,8 @@ import Dropdown from './src/components/override-sdk/field/Dropdown/';
 const localSdkComponentMap = {
   // Todo: MediaCoTodo,
   TextInput: TextInput,
-  Dropdown: Dropdown
+  Dropdown: Dropdown,
+  RadioButtons: RadioButtons
   /* map end - DO NOT REMOVE */
 };
 
