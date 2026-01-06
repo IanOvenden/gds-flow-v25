@@ -11,7 +11,8 @@ module.exports = (env, argv) => {
   pluginsToAdd.push(
     new HtmlWebpackPlugin({
       template: './src/index.html',
-      filename: 'index.html'
+      filename: 'index.html',
+      baseUrl: './'
     })
   );
   pluginsToAdd.push(
@@ -34,26 +35,36 @@ module.exports = (env, argv) => {
           to: './'
         },
         {
+          from: './node_modules/govuk-frontend/dist/govuk/assets/images',
+          to: 'assets/images/'
+        },
+        {
+          from: './node_modules/govuk-frontend/dist/govuk/assets/fonts',
+          to: 'assets/fonts/'
+        },
+        {
           from: './assets/icons/*',
           to() {
-            return Promise.resolve('constellation/icons/[name][ext]');
+            return Promise.resolve('constellation/icons/[name].[ext]');
           }
         },
         {
           from: './assets/css/*',
-          to: './'
+          to() {
+            return Promise.resolve('assets/css/[name][ext]');
+          }
         },
         {
           from: './assets/img/*',
-          to: './'
+          to() {
+            return Promise.resolve('assets/img/[name][ext]');
+          }
         },
         {
-          from: './assets/css/*',
-          to: './'
-        },
-        {
-          from: './node_modules/tinymce',
-          to: './tinymce'
+          from: './assets/images/*',
+          to() {
+            return Promise.resolve('assets/images/[name][ext]');
+          }
         },
         {
           from: './node_modules/@pega/constellationjs/dist/bootstrap-shell.js',
@@ -62,7 +73,7 @@ module.exports = (env, argv) => {
         {
           from: './node_modules/@pega/constellationjs/dist/bootstrap-shell.*.*',
           to() {
-            return Promise.resolve('constellation/[name][ext]');
+            return Promise.resolve('constellation/[name].[ext]');
           }
         },
         {

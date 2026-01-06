@@ -10,7 +10,7 @@ const useStyles = makeStyles(theme => ({
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
-    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    //transition: 'transform 0.3s ease, box-shadow 0.3s ease',
     '&:hover': {
       transform: 'translateY(-10px)',
       boxShadow: '0 10px 20px rgba(0, 0, 0, 0.2)'
