@@ -11,7 +11,8 @@ module.exports = (env, argv) => {
   pluginsToAdd.push(
     new HtmlWebpackPlugin({
       template: './src/index.html',
-      filename: 'index.html'
+      filename: 'index.html',
+      baseUrl: './'
     })
   );
   pluginsToAdd.push(
@@ -34,26 +35,36 @@ module.exports = (env, argv) => {
           to: './'
         },
         {
+          from: './node_modules/govuk-frontend/dist/govuk/assets/images',
+          to: 'assets/images/'
+        },
+        {
+          from: './node_modules/govuk-frontend/dist/govuk/assets/fonts',
+          to: 'assets/fonts/'
+        },
+        {
           from: './assets/icons/*',
           to() {
-            return Promise.resolve('constellation/icons/[name][ext]');
+            return Promise.resolve('constellation/icons/[name].[ext]');
           }
         },
         {
           from: './assets/css/*',
-          to: './'
+          to() {
+            return Promise.resolve('assets/css/[name][ext]');
+          }
         },
         {
           from: './assets/img/*',
-          to: './'
+          to() {
+            return Promise.resolve('assets/img/[name][ext]');
+          }
         },
         {
-          from: './assets/css/*',
-          to: './'
-        },
-        {
-          from: './node_modules/tinymce',
-          to: './tinymce'
+          from: './assets/images/*',
+          to() {
+            return Promise.resolve('assets/images/[name][ext]');
+          }
         },
         {
           from: './node_modules/@pega/constellationjs/dist/bootstrap-shell.js',
@@ -62,7 +73,7 @@ module.exports = (env, argv) => {
         {
           from: './node_modules/@pega/constellationjs/dist/bootstrap-shell.*.*',
           to() {
-            return Promise.resolve('constellation/[name][ext]');
+            return Promise.resolve('constellation/[name].[ext]');
           }
         },
         {
@@ -175,20 +186,24 @@ module.exports = (env, argv) => {
             }
           ]
         },
-        { test: /\.(png|gif|jpg|cur)$/i, loader: 'url-loader', options: { limit: 8192 } },
+        {
+          test: /\.(png|gif|jpg|cur)$/i,
+          type: 'asset',
+          parser: { dataUrlCondition: { maxSize: 8192 } }
+        },
         {
           test: /\.woff2(\?v=[0-9]\.[0-9]\.[0-9])?$/i,
-          loader: 'url-loader',
-          options: { limit: 10000, mimetype: 'application/font-woff2' }
+          type: 'asset',
+          parser: { dataUrlCondition: { maxSize: 10000 } }
         },
         {
           test: /\.woff(\?v=[0-9]\.[0-9]\.[0-9])?$/i,
-          loader: 'url-loader',
-          options: { limit: 10000, mimetype: 'application/font-woff' }
+          type: 'asset',
+          parser: { dataUrlCondition: { maxSize: 10000 } }
         },
         {
           test: /\.(ttf|eot|svg|otf)(\?v=[0-9]\.[0-9]\.[0-9])?$/i,
-          loader: 'file-loader'
+          type: 'asset/resource'
         },
         {
           test: /\.(d.ts)$/ /* latest react-sdk-components needs to ignore compiling .d.ts and .map files */,

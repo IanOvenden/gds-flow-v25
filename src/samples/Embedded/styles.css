@@ -6,6 +6,7 @@
   margin-right: auto;
   margin-bottom: 5%;
   padding: 16px;
+  box-shadow: none;
 }
 
 #pega-part-of-page .psdk-horizontal-stepper-header-container {
@@ -15,6 +16,7 @@
 
 #pega-part-of-page .MuiCard-root {
   padding: 16px;
+  box-shadow: none;
 }
 
 #pega-part-of-page .MuiCardContent-root:first-child {

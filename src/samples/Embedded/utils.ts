@@ -3,7 +3,7 @@ import { sdkSetAuthHeader, sdkSetCustomTokenParamsCB } from '@pega/auth/lib/sdk-
 export const shoppingOptions = [
   {
     name: 'Oceonix 25',
-    imageSrc: './assets/img/WhitePhone.png',
+    imageSrc: '/assets/img/WhitePhone.png',
     saveAmount: 'Save $150',
     monthlyPrice: 'Starting at $18.05/mo',
     tenure: 'for 36 months',
@@ -12,7 +12,7 @@ export const shoppingOptions = [
   },
   {
     name: 'Oceonix 25 Max',
-    imageSrc: './assets/img/SilverPhone.png',
+    imageSrc: '/assets/img/SilverPhone.png',
     saveAmount: 'Save $200',
     monthlyPrice: 'Starting at $22.22/mo',
     tenure: 'for 36 months',
@@ -21,7 +21,7 @@ export const shoppingOptions = [
   },
   {
     name: 'Oceonix 25 Ultra',
-    imageSrc: './assets/img/GoldPhone.png',
+    imageSrc: '/assets/img/GoldPhone.png',
     saveAmount: 'Save $250',
     monthlyPrice: 'Starting at $26.38/mo',
     tenure: 'for 36 months',

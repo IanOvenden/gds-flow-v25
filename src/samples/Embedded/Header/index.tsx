@@ -124,7 +124,7 @@ export default function Header() {
     <header className={classes.header}>
       <nav className={classes.navContainer}>
         <a href='/' className={classes.logo}>
-          <img src='./assets/img/MediaCoLogo.png' alt='MediaCo Logo' />
+          <img src='/assets/img/MediaCoLogo.png' alt='MediaCo Logo' />
         </a>
 
         <div className={navMenuClassName}>
@@ -157,7 +157,7 @@ export default function Header() {
             </li>
             <li>
               <a href='/' className='profile-link' aria-label='User Profile'>
-                <img src='./assets/img/UserProfile.png' alt='User Profile' className={classes.profileAvatar} />
+                <img src='/assets/img/UserProfile.png' alt='User Profile' className={classes.profileAvatar} />
               </a>
             </li>
           </ul>
