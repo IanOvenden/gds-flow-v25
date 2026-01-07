@@ -20,18 +20,6 @@ export default function ActionButtons(props: ActionButtonsProps) {
 
   return (
     <div className='govuk-button-group'>
-      {arSecondaryButtons.map(button => (
-        <button
-          key={button.name}
-          type='button'
-          className='govuk-button govuk-button--secondary'
-          data-module='govuk-button'
-          onClick={() => handleButtonPress(button.jsAction, 'secondary')}
-        >
-          {localizedVal(button.name, localeCategory)}
-        </button>
-      ))}
-
       {arMainButtons.map(button => (
         <button
           key={button.name}
@@ -39,6 +27,17 @@ export default function ActionButtons(props: ActionButtonsProps) {
           className='govuk-button'
           data-module='govuk-button'
           onClick={() => handleButtonPress(button.jsAction, 'primary')}
+        >
+          {localizedVal(button.name, localeCategory)}
+        </button>
+      ))}
+      {arSecondaryButtons.map(button => (
+        <button
+          key={button.name}
+          type='button'
+          className='govuk-button govuk-button--secondary'
+          data-module='govuk-button'
+          onClick={() => handleButtonPress(button.jsAction, 'secondary')}
         >
           {localizedVal(button.name, localeCategory)}
         </button>
