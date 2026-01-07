@@ -186,20 +186,24 @@ module.exports = (env, argv) => {
             }
           ]
         },
-        { test: /\.(png|gif|jpg|cur)$/i, loader: 'url-loader', options: { limit: 8192 } },
+        {
+          test: /\.(png|gif|jpg|cur)$/i,
+          type: 'asset',
+          parser: { dataUrlCondition: { maxSize: 8192 } }
+        },
         {
           test: /\.woff2(\?v=[0-9]\.[0-9]\.[0-9])?$/i,
-          loader: 'url-loader',
-          options: { limit: 10000, mimetype: 'application/font-woff2' }
+          type: 'asset',
+          parser: { dataUrlCondition: { maxSize: 10000 } }
         },
         {
           test: /\.woff(\?v=[0-9]\.[0-9]\.[0-9])?$/i,
-          loader: 'url-loader',
-          options: { limit: 10000, mimetype: 'application/font-woff' }
+          type: 'asset',
+          parser: { dataUrlCondition: { maxSize: 10000 } }
         },
         {
           test: /\.(ttf|eot|svg|otf)(\?v=[0-9]\.[0-9]\.[0-9])?$/i,
-          loader: 'file-loader'
+          type: 'asset/resource'
         },
         {
           test: /\.(d.ts)$/ /* latest react-sdk-components needs to ignore compiling .d.ts and .map files */,
