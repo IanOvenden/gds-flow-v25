@@ -25,7 +25,7 @@
     "appAlias": "GDSComp",
 
     "sdkContentServerUrl_comment": "If specified, the given URL will be used. If left blank, window.location.origin will be used.",
-    "sdkContentServerUrl": "http://localhost:3502/",
+    "sdkContentServerUrl": "",
 
     "appPortal_comment": "If specified, the given appPortal will be loaded. If left blank, the operator's default Portal is used. Ignored for Embedded use",
     "appPortal": "",
