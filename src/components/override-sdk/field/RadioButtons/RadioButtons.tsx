@@ -90,6 +90,9 @@ export default function RadioButtons(props: RadioButtonsProps) {
         <div className={`govuk-radios${inline ? ' govuk-radios--inline' : ''}`} data-module='govuk-radios'>
           {theOptions.map((opt: any, idx: number) => {
             const optionId = idx === 0 ? baseId : `${baseId}-${idx + 1}`;
+            const hint = typeof opt.value === 'string' ? opt.value.trim() : '';
+            const itemHintId = `${optionId}-item-hint`;
+
             return (
               <div className='govuk-radios__item' key={opt.key}>
                 <input
@@ -102,10 +105,17 @@ export default function RadioButtons(props: RadioButtonsProps) {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required={required}
+                  aria-describedby={hint ? itemHintId : undefined}
                 />
                 <label className='govuk-label govuk-radios__label' htmlFor={optionId}>
-                  {localize(opt.value)}
+                  {localize(opt.key)}
                 </label>
+
+                {hint ? (
+                  <div id={itemHintId} className='govuk-hint govuk-radios__hint'>
+                    {localize(hint)}
+                  </div>
+                ) : null}
               </div>
             );
           })}
