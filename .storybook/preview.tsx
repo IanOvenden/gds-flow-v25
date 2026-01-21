@@ -12,6 +12,9 @@ import { themes as sbThemes } from '@storybook/theming';
 import { decorator } from '../__mocks__/react_pconnect';
 import setPCoreMocks from '../__mocks__/pcoreMocks';
 
+// Import GDS styles globally for all Storybook stories
+import '../assets/css/gdsStyles.scss';
+
 const isConstellation = process.env.STORYBOOK_CONSTELLATION;
 
 if (!isConstellation) {

@@ -31,8 +31,20 @@ const config = {
       config.resolve.alias['@pega/auth/lib/sdk-auth-manager'] = path.resolve(__dirname, '../__mocks__/authManager.tsx');
     }
 
-    if (config.module) {
-      config.module.rules?.push(
+    // Remove the existing CSS rules from Storybook that are conflicting
+    if (config.module?.rules) {
+      config.module.rules = config.module.rules.filter((rule: any) => {
+        // Keep non-CSS rules
+        if (!rule || typeof rule !== 'object') return true;
+        if (!rule.test) return true;
+        // Remove existing CSS rules to prevent double-loading
+        const testString = rule.test.toString();
+        if (testString.includes('\\.css')) return false;
+        return true;
+      });
+
+      // Add our custom rules
+      config.module.rules.push(
         {
           test: /\.(d.ts)$/,
           loader: 'null-loader'
@@ -45,6 +57,26 @@ const config = {
           test: /\.tsx?$/,
           use: 'ts-loader',
           exclude: /node_modules/
+        },
+        {
+          test: /\.s[ac]ss$/i,
+          use: [
+            'style-loader',
+            'css-loader',
+            {
+              loader: 'sass-loader',
+              options: {
+                sassOptions: {
+                  quietDeps: true, // Suppress deprecation warnings from dependencies
+                  silenceDeprecations: ['mixed-decls', 'import', 'global-builtin', 'color-functions', 'slash-div', 'if-function']
+                }
+              }
+            }
+          ]
+        },
+        {
+          test: /\.css$/i,
+          use: ['style-loader', 'css-loader']
         }
       );
     }

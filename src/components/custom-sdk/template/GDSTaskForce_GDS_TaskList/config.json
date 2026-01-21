@@ -1,0 +1,40 @@
+{
+  "name": "GDSTaskForce_GDS_TaskList",
+  "label": "GDS Task List",
+  "description": "Present a list of data in a GDS task list component pattern",
+  "organization": "GDSTaskForce",
+  "version": "0.0.1",
+  "library": "GDS",
+  "componentKey": "GDSTaskForce_GDS_TaskList",
+  "type": "Template",
+  "subtype": "FORM",
+  "icon": "DefaultForm.svg",
+  "properties": [
+    {
+      "name": "heading",
+      "label": "Heading",
+      "format": "TEXT"
+    },
+    {
+      "name": "dataPage",
+      "label": "Data Page",
+      "format": "TEXT",
+      "defaultValue": "D_TaskList"
+    },
+    {
+      "format": "INSTRUCTIONS"
+    },
+    {
+      "format": "LABEL",
+      "label": "About",
+      "name": "PegaAboutLabel",
+      "variant": "h3"
+    },
+    {
+      "format": "LABEL",
+      "label": "GDS Task List Component v0.0.1",
+      "name": "PegaAboutData",
+      "variant": "primary"
+    }
+  ]
+}
