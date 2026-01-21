@@ -65,6 +65,15 @@ export default function MainScreen() {
           <div className='govuk-grid-row'>
             <div className='govuk-grid-column-two-thirds'>
               <div className='responsive-bottom-margin'>
+                <button
+                  type='submit'
+                  className='govuk-button'
+                  data-module='govuk-button'
+                  onClick={createComplaintCase}
+                  style={{ marginBottom: '2rem' }}
+                >
+                  Make a complaint
+                </button>
                 <div
                   data-module='govspeak'
                   className='gem-c-govspeak govuk-govspeak gem-c-govspeak--direction-ltr js-disable-youtube govuk-!-margin-bottom-0'
