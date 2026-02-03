@@ -63,7 +63,7 @@ function GdsTaskForceGdsTaskList(props: GdsTaskForceGdsTaskListProps) {
                 id: item.pyID || `preview-${index}`,
                 name: item.TaskTitle || item.pyLabel || item.TaskName || `Task ${index + 1}`,
                 status: item.Status || item.pyStatusWork || 'not-started',
-                hint: item.Hint || item.pyDescription
+                hint: item.TaskDescription || item.Hint || item.pyDescription
               }));
               setTaskPreviews(tasks);
               setIsLoading(false);
@@ -81,7 +81,7 @@ function GdsTaskForceGdsTaskList(props: GdsTaskForceGdsTaskListProps) {
             id: item.pyID || `preview-${index}`,
             name: item.TaskTitle || item.pyLabel || item.TaskName || `Task ${index + 1}`,
             status: item.Status || item.pyStatusWork || 'not-started',
-            hint: item.Hint || item.pyDescription
+            hint: item.TaskDescription || item.Hint || item.pyDescription
           }));
           setTaskPreviews(tasks);
         } else {

@@ -4,6 +4,7 @@ export interface TaskItem {
   status: 'completed' | 'incomplete' | 'not-started' | 'cannot-start';
   hint?: string;
   href?: string;
+  action?: any; // Matched availableProcess from caseInfo
 }
 
 export interface TaskListProps {
