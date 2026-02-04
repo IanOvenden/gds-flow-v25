@@ -146,6 +146,23 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
 
           console.log('Process API response:', response);
 
+          const responseData = (response as any)?.data || response;
+          const nextAssignmentInfo = responseData?.nextAssignmentInfo;
+
+          if (nextAssignmentInfo?.ID && nextAssignmentInfo?.className) {
+            const actionsApi = pConnect.getActionsApi?.();
+            if (actionsApi?.openAssignment) {
+              const containerName = PCore.getConstants().PRIMARY;
+              const contextName = pConnect.getContextName?.() || undefined;
+
+              await actionsApi.openAssignment(nextAssignmentInfo.ID, nextAssignmentInfo.className, {
+                containerName,
+                context: contextName
+              });
+              return;
+            }
+          }
+
           // Refresh the work area to show the new assignment/view
           if (window.PCore) {
             // Trigger a refresh event to update the UI
