@@ -9,11 +9,46 @@ import { ThemeProvider } from 'styled-components';
 const meta = {
   title: 'GDS Components/TaskList (Constellation Preview)',
   decorators: [
-    Story => (
-      <ThemeProvider theme={WorkTheme as any}>
-        <Story />
-      </ThemeProvider>
-    )
+    Story => {
+      // Mock PCore for storybook
+      if (!window.PCore) {
+        (window as any).PCore = {
+          getRestClient: () => ({
+            invokeCustomRestApi: async (endpoint: string, options: any) => {
+              console.log('[Storybook Mock] Process API called:', endpoint, options);
+              // Mock a successful response with assignment info
+              return {
+                data: {
+                  nextAssignmentInfo: {
+                    ID: 'ASSIGN-123',
+                    className: 'Work-Test'
+                  }
+                }
+              };
+            }
+          }),
+          getConstants: () => ({
+            PRIMARY: 'primary',
+            PUB_SUB_EVENTS: {
+              CASE_EVENTS: {
+                ASSIGNMENT_SUBMISSION: 'ASSIGNMENT_SUBMISSION'
+              }
+            }
+          }),
+          getPubSubUtils: () => ({
+            publish: (event: string, data: any) => {
+              console.log('[Storybook Mock] PubSub event:', event, data);
+            }
+          })
+        };
+      }
+
+      return (
+        <ThemeProvider theme={WorkTheme as any}>
+          <Story />
+        </ThemeProvider>
+      );
+    }
   ],
   argTypes: {
     getPConnect: {
@@ -76,6 +111,194 @@ const createMockDataPageResponse = (tasks: Array<{ name: string; status: string;
 });
 
 /**
+ * Creates mock available processes that can be matched to tasks
+ */
+const createMockAvailableProcesses = () => [
+  {
+    ID: 'gotoCompanyDirectors',
+    name: 'Company Directors',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoCompanyDirectors',
+        type: 'application/json',
+        title: 'Start Company Directors'
+      }
+    }
+  },
+  {
+    ID: 'gotoRegisteredCompany',
+    name: 'Registered company details',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoRegisteredCompany',
+        type: 'application/json',
+        title: 'Start Registered Company'
+      }
+    }
+  },
+  {
+    ID: 'gotoFinancialHistory',
+    name: 'Financial history',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoFinancialHistory',
+        type: 'application/json',
+        title: 'Start Financial History'
+      }
+    }
+  },
+  {
+    ID: 'gotoBusinessPlan',
+    name: 'Business plan',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoBusinessPlan',
+        type: 'application/json',
+        title: 'Start Business Plan'
+      }
+    }
+  },
+  {
+    ID: 'gotoReferences',
+    name: 'References',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoReferences',
+        type: 'application/json',
+        title: 'Start References'
+      }
+    }
+  },
+  {
+    ID: 'gotoPersonalDetails',
+    name: 'Personal details',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoPersonalDetails',
+        type: 'application/json',
+        title: 'Start Personal Details'
+      }
+    }
+  },
+  {
+    ID: 'gotoContactInformation',
+    name: 'Contact information',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoContactInformation',
+        type: 'application/json',
+        title: 'Start Contact Information'
+      }
+    }
+  },
+  {
+    ID: 'gotoSecurityQuestions',
+    name: 'Security questions',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoSecurityQuestions',
+        type: 'application/json',
+        title: 'Start Security Questions'
+      }
+    }
+  },
+  {
+    ID: 'gotoPersonalInformation',
+    name: 'Personal information',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoPersonalInformation',
+        type: 'application/json',
+        title: 'Start Personal Information'
+      }
+    }
+  },
+  {
+    ID: 'gotoFinancialInformation',
+    name: 'Financial information',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoFinancialInformation',
+        type: 'application/json',
+        title: 'Start Financial Information'
+      }
+    }
+  },
+  {
+    ID: 'gotoSupportingDocuments',
+    name: 'Supporting documents',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoSupportingDocuments',
+        type: 'application/json',
+        title: 'Start Supporting Documents'
+      }
+    }
+  },
+  {
+    ID: 'gotoEligibilityCheck',
+    name: 'Complete eligibility check',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoEligibilityCheck',
+        type: 'application/json',
+        title: 'Start Eligibility Check'
+      }
+    }
+  },
+  {
+    ID: 'gotoSubmitDocuments',
+    name: 'Submit required documents',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoSubmitDocuments',
+        type: 'application/json',
+        title: 'Submit Documents'
+      }
+    }
+  },
+  {
+    ID: 'gotoAttendInterview',
+    name: 'Attend interview',
+    type: 'pyStartProcess',
+    links: {
+      add: {
+        rel: 'create',
+        href: '/cases/WORK-123/processes/gotoAttendInterview',
+        type: 'application/json',
+        title: 'Attend Interview'
+      }
+    }
+  }
+];
+
+/**
  * Creates a mock PConnect object for Storybook with D_TaskList data page
  */
 const createMockPConnect = (tasks: Array<{ name: string; status: string; hint?: string }>, label: string = 'Task List') => ({
@@ -87,12 +310,30 @@ const createMockPConnect = (tasks: Array<{ name: string; status: string; hint?: 
     if (dataPageName === 'D_TaskList') {
       return createMockDataPageResponse(tasks);
     }
-    return null;
+    // Return caseInfo with available processes
+    return {
+      caseInfo: {
+        ID: 'WORK-123',
+        availableProcesses: createMockAvailableProcesses(),
+        availableActions: []
+      }
+    };
   },
   getContextName: () => 'app',
-  getValue: () => undefined,
+  getValue: (key: string) => {
+    if (key === '.pzInsKey' || key === 'pzInsKey') {
+      return 'WORK-123';
+    }
+    return undefined;
+  },
   getChildren: () => [],
-  getConfigProps: () => ({})
+  getConfigProps: () => ({}),
+  getActionsApi: () => ({
+    openAssignment: async (assignmentID: string, className: string, options: any) => {
+      console.log('[Storybook Mock] Opening assignment:', assignmentID, className, options);
+      alert(`Mock: Opening assignment ${assignmentID} in ${className}`);
+    }
+  })
 });
 
 /**
@@ -400,6 +641,52 @@ export const WithLabel: Story = {
     heading: 'Application process',
     showLabel: true,
     label: 'Required Tasks',
+    nCols: 1,
+    caseType: ''
+  }
+};
+
+/**
+ * Interactive task list - click on tasks to trigger process API
+ */
+export const ClickableTasks: Story = {
+  render: args => {
+    const tasks = [
+      { name: 'Company Directors', status: 'incomplete', hint: 'Click to start this task' },
+      { name: 'Registered company details', status: 'not-started', hint: 'Click to start this task' },
+      { name: 'Financial history', status: 'not-started', hint: 'Click to start - Include 5 years of relevant financial information' }
+    ];
+
+    const props = {
+      heading: args.heading,
+      showLabel: args.showLabel,
+      label: args.label,
+      nCols: args.nCols || 1,
+      caseType: args.caseType || '',
+      dataPage: 'D_TaskList',
+      getPConnect: () => createMockPConnect(tasks, args.label),
+      children: []
+    };
+
+    return (
+      <Card>
+        <CardHeader>
+          <Text variant='h2'>Interactive Task List</Text>
+          <Text variant='secondary'>
+            Tasks are clickable and will trigger process API calls. Click any task to see the mock API interaction. Check browser console for detailed
+            logs.
+          </Text>
+        </CardHeader>
+        <CardContent>
+          <GdsTaskForceGdsTaskList {...props} />
+        </CardContent>
+      </Card>
+    );
+  },
+  args: {
+    heading: 'Start your application tasks',
+    showLabel: false,
+    label: 'Application Tasks',
     nCols: 1,
     caseType: ''
   }

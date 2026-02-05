@@ -1,10 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Grid, FieldGroup, Text, SummaryList, Button, Icon, withConfiguration } from '@pega/cosmos-react-core';
 
 import type { PConnFieldProps } from './PConnProps';
 import './create-nonce';
 
 import StyledGdsTaskForceGdsTaskListWrapper from './styles';
+
+interface AvailableProcess {
+  name: string;
+  ID: string;
+  type: string;
+  links: {
+    add: {
+      rel: string;
+      href: string;
+      type: string;
+      title: string;
+    };
+  };
+}
 
 // interface for props
 interface GdsTaskForceGdsTaskListProps extends PConnFieldProps {
@@ -25,6 +39,165 @@ function GdsTaskForceGdsTaskList(props: GdsTaskForceGdsTaskListProps) {
   const [taskPreviews, setTaskPreviews] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const cssClassHook = 'gds-task-list-constellation';
+
+  // Handle task click - call the process API
+  const handleTaskClick = useCallback(
+    async (task: any) => {
+      if (!task.action) {
+        console.warn('[Constellation] No action available for task:', task.name);
+        return;
+      }
+
+      try {
+        const pConnect = getPConnect();
+        const processID = task.action.ID;
+
+        console.log(`[Constellation] Calling process API for: ${processID}`);
+        console.log('[Constellation] Process details:', task.action);
+
+        // Get the case ID
+        const dataObject = pConnect.getDataObject?.() as any;
+        const caseID = dataObject?.caseInfo?.ID || pConnect.getValue?.('.pzInsKey') || pConnect.getValue?.('pzInsKey');
+
+        if (!caseID) {
+          console.error('[Constellation] Cannot call process: Case ID not found');
+          return;
+        }
+
+        // Call the DX API: POST /cases/{caseID}/processes/{processID}
+        // Use PCore's REST client which automatically handles authentication
+        if (window.PCore) {
+          const restClient = PCore.getRestClient();
+          const endpoint = `/api/application/v2/cases/${caseID}/processes/${processID}`;
+
+          const response = await restClient.invokeCustomRestApi(
+            endpoint,
+            {
+              method: 'POST',
+              body: {},
+              withoutDefaultHeaders: false
+            },
+            pConnect.getContextName()
+          );
+
+          console.log('[Constellation] Process API response:', response);
+
+          const responseData = (response as any)?.data || response;
+          const nextAssignmentInfo = responseData?.nextAssignmentInfo;
+
+          if (nextAssignmentInfo?.ID && nextAssignmentInfo?.className) {
+            const actionsApi = pConnect.getActionsApi?.();
+            if (actionsApi?.openAssignment) {
+              const containerName = PCore.getConstants().PRIMARY;
+              const contextName = pConnect.getContextName?.() || undefined;
+
+              await actionsApi.openAssignment(nextAssignmentInfo.ID, nextAssignmentInfo.className, {
+                containerName,
+                context: contextName
+              });
+              return;
+            }
+          }
+
+          // Refresh the work area to show the new assignment/view
+          if (window.PCore) {
+            // Trigger a refresh event to update the UI
+            PCore.getPubSubUtils().publish(PCore.getConstants().PUB_SUB_EVENTS.CASE_EVENTS.ASSIGNMENT_SUBMISSION, {});
+          }
+        } else {
+          console.warn('[Constellation] PCore not available');
+        }
+      } catch (error) {
+        console.error('[Constellation] Error calling process API:', error);
+      }
+    },
+    [getPConnect]
+  );
+
+  // Normalize status from Pega to GDS format
+  const normalizeStatus = useCallback((status: string): string => {
+    const normalized = status?.toLowerCase() || '';
+
+    // Check incomplete first before complete to avoid false matches
+    if (normalized.includes('incomplete') || normalized === 'open' || normalized === 'new') {
+      return 'incomplete';
+    }
+    if (normalized.includes('complete') || normalized === 'resolved-completed') {
+      return 'completed';
+    }
+    if (normalized.includes('cannot') || normalized === 'pending-approval') {
+      return 'cannot-start';
+    }
+
+    return 'not-started';
+  }, []);
+
+  // Map available processes to task items based on name matching
+  const mapActionToTask = useCallback((taskName: string, taskID: string, availableProcesses: AvailableProcess[]) => {
+    // Normalize the task name for matching
+    const normalizedTaskName = taskName.toLowerCase();
+    const normalizedTaskID = taskID.toLowerCase();
+
+    // Extract keywords from task name (split by spaces and common separators)
+    const taskKeywords = normalizedTaskName.split(/[\s_-]+/).filter(k => k.length > 2);
+
+    // Score each process based on keyword matches
+    const scoredProcesses = availableProcesses.map(process => {
+      const processName = process.name.toLowerCase();
+      const processID = process.ID.toLowerCase();
+      let score = 0;
+
+      // Check exact match first (highest priority)
+      if (processName === normalizedTaskName || processID === normalizedTaskID) {
+        score += 1000;
+      }
+
+      // Count how many task keywords appear in the process name or ID
+      taskKeywords.forEach(keyword => {
+        if (processName.includes(keyword)) {
+          score += 10;
+        }
+        if (processID.includes(keyword)) {
+          score += 10;
+        }
+      });
+
+      // Bonus for "submit" keyword when task contains "submit"
+      // (prioritize submit actions over capture/other actions)
+      if (normalizedTaskName.includes('submit')) {
+        if (processName.includes('submit') || processID.includes('submit')) {
+          score += 20;
+        }
+      }
+
+      // Bonus for "goto" prefix in process ID (Pega convention for UI flows)
+      if (processID.startsWith('goto')) {
+        score += 5;
+      }
+
+      // Fallback: check if process name contains task name or vice versa
+      if (processName.includes(normalizedTaskName) || normalizedTaskName.includes(processName)) {
+        score += 5;
+      }
+      if (processID.includes(normalizedTaskID) || normalizedTaskID.includes(processID)) {
+        score += 5;
+      }
+
+      return { process, score };
+    });
+
+    // Sort by score descending and return the highest scoring process
+    scoredProcesses.sort((a, b) => b.score - a.score);
+
+    // Only return a match if score is > 0
+    const bestMatch = scoredProcesses[0];
+    if (bestMatch && bestMatch.score > 0) {
+      console.log(`[Constellation Preview] Best match for "${taskName}": ${bestMatch.process.ID} (score: ${bestMatch.score})`);
+      return bestMatch.process;
+    }
+
+    return undefined;
+  }, []);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -48,6 +221,14 @@ function GdsTaskForceGdsTaskList(props: GdsTaskForceGdsTaskListProps) {
         }
 
         console.log('D_TaskList (Constellation) - Case ID:', caseID);
+        console.log('D_TaskList (Constellation) - Context:', getPConnect().getContextName());
+
+        // Extract available processes and actions from caseInfo
+        const availableProcessesList = dataObject?.caseInfo?.availableProcesses || [];
+        const availableActions = dataObject?.caseInfo?.availableActions || [];
+
+        console.log('Available Processes (Constellation):', availableProcessesList);
+        console.log('Available Actions (Constellation):', availableActions);
 
         // Try async fetch first if available
         if (window.PCore && window.PCore.getDataPageUtils && caseID) {
@@ -57,14 +238,31 @@ function GdsTaskForceGdsTaskList(props: GdsTaskForceGdsTaskListProps) {
 
             const dataPageData = await dataPageUtils.getDataAsync(dataPage, getPConnect().getContextName(), parameters);
 
-            const results = (dataPageData as any)?.data;
+            console.log('D_TaskList (Constellation) dataPageData:', dataPageData);
+
+            const results = (dataPageData as any)?.data || (dataPageData as any)?.pxResults;
+
+            console.log('D_TaskList (Constellation) results:', results);
+
             if (results && Array.isArray(results)) {
-              const tasks = results.map((item: any, index: number) => ({
-                id: item.pyID || `preview-${index}`,
-                name: item.TaskTitle || item.pyLabel || item.TaskName || `Task ${index + 1}`,
-                status: item.Status || item.pyStatusWork || 'not-started',
-                hint: item.TaskDescription || item.Hint || item.pyDescription
-              }));
+              const tasks = results.map((item: any, index: number) => {
+                const taskName = item.TaskTitle || item.pyLabel || item.TaskName || item.pyName || `Task ${index + 1}`;
+                const taskID = item.pyID || item.pzInsKey || `preview-${index}`;
+
+                // Find matching action for this task
+                const matchedProcess = mapActionToTask(taskName, taskID, availableProcessesList);
+
+                console.log(`[Constellation] Mapping task "${taskName}" (${taskID}) to process:`, matchedProcess?.ID || 'none');
+
+                return {
+                  id: taskID,
+                  name: taskName,
+                  status: normalizeStatus(item.Status || item.pyStatusWork || item.pyStatus || 'not-started'),
+                  hint: item.TaskDescription || item.Hint || item.pyDescription || item.Description,
+                  action: matchedProcess
+                };
+              });
+              console.log('Mapped taskList (Constellation):', tasks);
               setTaskPreviews(tasks);
               setIsLoading(false);
               return;
@@ -77,12 +275,21 @@ function GdsTaskForceGdsTaskList(props: GdsTaskForceGdsTaskListProps) {
         // Fallback to synchronous getDataObject for preview
         const dataPageData = getPConnect().getDataObject?.(dataPage);
         if (dataPageData && dataPageData.pxResults) {
-          const tasks = dataPageData.pxResults.map((item: any, index: number) => ({
-            id: item.pyID || `preview-${index}`,
-            name: item.TaskTitle || item.pyLabel || item.TaskName || `Task ${index + 1}`,
-            status: item.Status || item.pyStatusWork || 'not-started',
-            hint: item.TaskDescription || item.Hint || item.pyDescription
-          }));
+          const tasks = dataPageData.pxResults.map((item: any, index: number) => {
+            const taskName = item.TaskTitle || item.pyLabel || item.TaskName || item.pyName || `Task ${index + 1}`;
+            const taskID = item.pyID || item.pzInsKey || `preview-${index}`;
+
+            // Find matching action for this task
+            const matchedProcess = mapActionToTask(taskName, taskID, availableProcessesList);
+
+            return {
+              id: taskID,
+              name: taskName,
+              status: normalizeStatus(item.Status || item.pyStatusWork || item.pyStatus || 'not-started'),
+              hint: item.TaskDescription || item.Hint || item.pyDescription || item.Description,
+              action: matchedProcess
+            };
+          });
           setTaskPreviews(tasks);
         } else {
           setTaskPreviews([]);
@@ -96,7 +303,7 @@ function GdsTaskForceGdsTaskList(props: GdsTaskForceGdsTaskListProps) {
     };
 
     fetchTasks();
-  }, [getPConnect, dataPage]);
+  }, [getPConnect, dataPage, normalizeStatus, mapActionToTask]);
 
   // Calculate completion statistics
   const completedSections = taskPreviews.filter(task => task.status?.toLowerCase() === 'completed').length;
@@ -123,11 +330,12 @@ function GdsTaskForceGdsTaskList(props: GdsTaskForceGdsTaskListProps) {
     primary: task.name,
     secondary: task.hint,
     tag: getStatusTag(task.status),
-    visual: <Icon name={task.status?.toLowerCase() === 'completed' ? 'check' : 'circle'} />
+    visual: <Icon name={task.status?.toLowerCase() === 'completed' ? 'check' : 'circle'} />,
+    onClick: task.action ? () => handleTaskClick(task) : undefined
   }));
 
   const handleOnClick = (action: string) => {
-    console.log('Task list action:', action);
+    console.log('[Constellation] Task list action:', action);
     // In actual runtime, this would trigger navigation or submission
   };
 
