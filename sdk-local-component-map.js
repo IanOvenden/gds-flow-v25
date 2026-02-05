@@ -5,6 +5,8 @@ import TextInput from './src/components/override-sdk/field/TextInput/';
 import Dropdown from './src/components/override-sdk/field/Dropdown/';
 import RadioButtons from './src/components/override-sdk/field/RadioButtons/';
 import ActionButtons from './src/components/override-sdk/infra/ActionButtons/';
+import GdsTaskForceGdsHierarchicalFormTaskList from './src/components/custom-sdk/template/GDSTaskForce_GDS_HierarchicalFormTaskList/';
+import GdsTaskForceGdsTaskList from './src/components/custom-sdk/template/GDSTaskForce_GDS_TaskList/';
 /* import end - DO NOT REMOVE */
 
 // localSdkComponentMap is the JSON object where we'll store the components that are
@@ -15,7 +17,9 @@ const localSdkComponentMap = {
   TextInput: TextInput,
   Dropdown: Dropdown,
   RadioButtons: RadioButtons,
-  ActionButtons: ActionButtons
+  ActionButtons: ActionButtons,
+  GDSTaskForce_GDS_HierarchicalFormTaskList: GdsTaskForceGdsHierarchicalFormTaskList,
+  GDSTaskForce_GDS_TaskList: GdsTaskForceGdsTaskList
   /* map end - DO NOT REMOVE */
 };
 

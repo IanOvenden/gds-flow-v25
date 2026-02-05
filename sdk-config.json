@@ -59,8 +59,8 @@
     },
 
     "componentDefaults": {
-      "organization": "YourOrg",
-      "library": "YourComponentLib",
+      "organization": "GDSTaskForce",
+      "library": "GDS",
       "version": "0.0.1",
       "type": "",
       "subtype": "",

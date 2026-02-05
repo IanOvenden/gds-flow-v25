@@ -1,0 +1,38 @@
+{
+  "name": "GDSTaskForce_GDS_HierarchicalFormTaskList",
+  "label": "Hierarchical Form GDS Task List",
+  "description": "Hierarchical Form GDS Task List",
+  "organization": "GDSTaskForce",
+  "version": "0.0.1",
+  "library": "GDS",
+  "componentKey": "GDSTaskForce_GDS_HierarchicalFormTaskList",
+  "type": "Template",
+  "subtype": "FORM",
+  "icon": "HierarchicalForm.svg",
+  "properties": [
+    {
+      "name": "heading",
+      "label": "Label",
+      "format": "TEXT"
+    },
+    {
+      "name": "A",
+      "label": "Region A",
+      "format": "CONTENTPICKER",
+      "addTypeList": ["Fields", "Views"],
+      "allowCreatingGroup": true
+    },
+    {
+      "format": "LABEL",
+      "label": "About",
+      "name": "PegaAboutLabel",
+      "variant": "h3"
+    },
+    {
+      "format": "LABEL",
+      "label": "Pega_Extensions 4.0.1, Tue Dec 02 2025, 25.1.1-199",
+      "name": "PegaAboutData",
+      "variant": "primary"
+    }
+  ]
+}
