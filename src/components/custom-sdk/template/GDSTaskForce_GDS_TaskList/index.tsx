@@ -202,33 +202,65 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
     const normalizedTaskName = taskName.toLowerCase();
     const normalizedTaskID = taskID.toLowerCase();
 
-    // Try to find a matching process
-    const matchedProcess = availableProcesses.find(process => {
+    // Extract keywords from task name (split by spaces and common separators)
+    const taskKeywords = normalizedTaskName.split(/[\s_-]+/).filter(k => k.length > 2);
+
+    // Score each process based on keyword matches
+    const scoredProcesses = availableProcesses.map(process => {
       const processName = process.name.toLowerCase();
       const processID = process.ID.toLowerCase();
+      let score = 0;
 
-      // Check for keyword matches (complaint, evidence, complainant, etc.)
-      const keywords = ['complaint', 'evidence', 'complainant', 'submit'];
+      // Check exact match first (highest priority)
+      if (processName === normalizedTaskName || processID === normalizedTaskID) {
+        score += 1000;
+      }
 
-      for (const keyword of keywords) {
-        if (
-          (normalizedTaskName.includes(keyword) || normalizedTaskID.includes(keyword)) &&
-          (processName.includes(keyword) || processID.includes(keyword))
-        ) {
-          return true;
+      // Count how many task keywords appear in the process name or ID
+      taskKeywords.forEach(keyword => {
+        if (processName.includes(keyword)) {
+          score += 10;
+        }
+        if (processID.includes(keyword)) {
+          score += 10;
+        }
+      });
+
+      // Bonus for "submit" keyword when task contains "submit"
+      // (prioritize submit actions over capture/other actions)
+      if (normalizedTaskName.includes('submit')) {
+        if (processName.includes('submit') || processID.includes('submit')) {
+          score += 20;
         }
       }
 
+      // Bonus for "goto" prefix in process ID (Pega convention for UI flows)
+      if (processID.startsWith('goto')) {
+        score += 5;
+      }
+
       // Fallback: check if process name contains task name or vice versa
-      return (
-        processName.includes(normalizedTaskName) ||
-        normalizedTaskName.includes(processName) ||
-        processID.includes(normalizedTaskID) ||
-        normalizedTaskID.includes(processID)
-      );
+      if (processName.includes(normalizedTaskName) || normalizedTaskName.includes(processName)) {
+        score += 5;
+      }
+      if (processID.includes(normalizedTaskID) || normalizedTaskID.includes(processID)) {
+        score += 5;
+      }
+
+      return { process, score };
     });
 
-    return matchedProcess;
+    // Sort by score descending and return the highest scoring process
+    scoredProcesses.sort((a, b) => b.score - a.score);
+
+    // Only return a match if score is > 0
+    const bestMatch = scoredProcesses[0];
+    if (bestMatch && bestMatch.score > 0) {
+      console.log(`Best match for "${taskName}": ${bestMatch.process.ID} (score: ${bestMatch.score})`);
+      return bestMatch.process;
+    }
+
+    return undefined;
   }, []);
 
   // Fetch tasks from D_TaskList data page
