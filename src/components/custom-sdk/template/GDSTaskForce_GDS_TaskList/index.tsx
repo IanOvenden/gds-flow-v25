@@ -104,80 +104,6 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Handle task click - call the process API
-  const handleTaskClick = useCallback(
-    async (task: TaskItem) => {
-      if (!task.action) {
-        console.warn('No action available for task:', task.name);
-        return;
-      }
-
-      try {
-        const pConnect = getPConnect();
-        const processID = task.action.ID;
-
-        console.log(`Calling process API for: ${processID}`);
-        console.log('Process details:', task.action);
-
-        // Get the case ID
-        const dataObject = pConnect.getDataObject?.() as any;
-        const caseID = dataObject?.caseInfo?.ID || pConnect.getValue?.('.pzInsKey') || pConnect.getValue?.('pzInsKey');
-
-        if (!caseID) {
-          console.error('Cannot call process: Case ID not found');
-          return;
-        }
-
-        // Call the DX API: POST /cases/{caseID}/processes/{processID}
-        // Use PCore's REST client which automatically handles authentication
-        if (window.PCore) {
-          const restClient = PCore.getRestClient();
-          const endpoint = `/api/application/v2/cases/${caseID}/processes/${processID}`;
-
-          const response = await restClient.invokeCustomRestApi(
-            endpoint,
-            {
-              method: 'POST',
-              body: {},
-              withoutDefaultHeaders: false
-            },
-            pConnect.getContextName()
-          );
-
-          console.log('Process API response:', response);
-
-          const responseData = (response as any)?.data || response;
-          const nextAssignmentInfo = responseData?.nextAssignmentInfo;
-
-          if (nextAssignmentInfo?.ID && nextAssignmentInfo?.className) {
-            const actionsApi = pConnect.getActionsApi?.();
-            if (actionsApi?.openAssignment) {
-              const containerName = PCore.getConstants().PRIMARY;
-              const contextName = pConnect.getContextName?.() || undefined;
-
-              await actionsApi.openAssignment(nextAssignmentInfo.ID, nextAssignmentInfo.className, {
-                containerName,
-                context: contextName
-              });
-              return;
-            }
-          }
-
-          // Refresh the work area to show the new assignment/view
-          if (window.PCore) {
-            // Trigger a refresh event to update the UI
-            PCore.getPubSubUtils().publish(PCore.getConstants().PUB_SUB_EVENTS.CASE_EVENTS.ASSIGNMENT_SUBMISSION, {});
-          }
-        } else {
-          console.warn('PCore not available');
-        }
-      } catch (error) {
-        console.error('Error calling process API:', error);
-      }
-    },
-    [getPConnect]
-  );
-
   // Normalize status from Pega to GDS format
   const normalizeStatus = useCallback((status: string): TaskItem['status'] => {
     const normalized = status?.toLowerCase() || '';
@@ -264,9 +190,8 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
   }, []);
 
   // Fetch tasks from D_TaskList data page
-  // eslint-disable-next-line sonarjs/cognitive-complexity
-  useEffect(() => {
-    const fetchTasks = async () => {
+  const fetchTasks = useCallback(
+    async (bypassCache = false) => {
       try {
         setIsLoading(true);
         const pConnect = getPConnect();
@@ -296,6 +221,7 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
 
         console.log('D_TaskList - Case ID:', caseID);
         console.log('D_TaskList - Context:', pConnect.getContextName());
+        console.log('D_TaskList - Bypass cache:', bypassCache);
 
         // Extract available processes and actions from caseInfo
         const availableProcessesList = dataObject?.caseInfo?.availableProcesses || [];
@@ -308,8 +234,11 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
         if (window.PCore && window.PCore.getDataPageUtils) {
           const dataPageUtils = window.PCore.getDataPageUtils();
 
-          // Pass parameters object with CaseKey
-          const parameters = { CaseKey: caseID };
+          // Pass parameters object with CaseKey and optional timestamp to bypass cache
+          const parameters: any = { CaseKey: caseID };
+          if (bypassCache) {
+            parameters._timestamp = Date.now();
+          }
           const dataPageData = await dataPageUtils.getDataAsync(dataPage, pConnect.getContextName(), parameters);
 
           console.log('D_TaskList dataPageData:', dataPageData);
@@ -384,10 +313,93 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
       } finally {
         setIsLoading(false);
       }
-    };
+    },
+    [getPConnect, dataPage, normalizeStatus, mapActionToTask]
+  );
 
+  // Handle task click - call the process API
+  const handleTaskClick = useCallback(
+    async (task: TaskItem) => {
+      if (!task.action) {
+        console.warn('No action available for task:', task.name);
+        return;
+      }
+
+      try {
+        const pConnect = getPConnect();
+        const processID = task.action.ID;
+
+        console.log(`Calling process API for: ${processID}`);
+        console.log('Process details:', task.action);
+
+        // Get the case ID
+        const dataObject = pConnect.getDataObject?.() as any;
+        const caseID = dataObject?.caseInfo?.ID || pConnect.getValue?.('.pzInsKey') || pConnect.getValue?.('pzInsKey');
+
+        if (!caseID) {
+          console.error('Cannot call process: Case ID not found');
+          return;
+        }
+
+        // Call the DX API: POST /cases/{caseID}/processes/{processID}
+        // Use PCore's REST client which automatically handles authentication
+        if (window.PCore) {
+          const restClient = PCore.getRestClient();
+          const endpoint = `/api/application/v2/cases/${caseID}/processes/${processID}`;
+
+          const response = await restClient.invokeCustomRestApi(
+            endpoint,
+            {
+              method: 'POST',
+              body: {},
+              withoutDefaultHeaders: false
+            },
+            pConnect.getContextName()
+          );
+
+          console.log('Process API response:', response);
+
+          const responseData = (response as any)?.data || response;
+          const nextAssignmentInfo = responseData?.nextAssignmentInfo;
+
+          if (nextAssignmentInfo?.ID && nextAssignmentInfo?.className) {
+            const actionsApi = pConnect.getActionsApi?.();
+            if (actionsApi?.openAssignment) {
+              const containerName = PCore.getConstants().PRIMARY;
+              const contextName = pConnect.getContextName?.() || undefined;
+
+              await actionsApi.openAssignment(nextAssignmentInfo.ID, nextAssignmentInfo.className, {
+                containerName,
+                context: contextName
+              });
+              return;
+            }
+          }
+
+          // Refresh the work area to show the new assignment/view
+          if (window.PCore) {
+            // Trigger a refresh event to update the UI
+            PCore.getPubSubUtils().publish(PCore.getConstants().PUB_SUB_EVENTS.CASE_EVENTS.ASSIGNMENT_SUBMISSION, {});
+          }
+
+          // Refetch the task list to reflect updated statuses (only if still on task list view)
+          // Use bypassCache=true to ensure fresh data
+          console.log('Refetching D_TaskList after process completion...');
+          await fetchTasks(true);
+        } else {
+          console.warn('PCore not available');
+        }
+      } catch (error) {
+        console.error('Error calling process API:', error);
+      }
+    },
+    [getPConnect, fetchTasks]
+  );
+
+  // Initial fetch of tasks on component mount
+  useEffect(() => {
     fetchTasks();
-  }, [getPConnect, dataPage, normalizeStatus, mapActionToTask]);
+  }, [fetchTasks]);
 
   if (isLoading) {
     return (
