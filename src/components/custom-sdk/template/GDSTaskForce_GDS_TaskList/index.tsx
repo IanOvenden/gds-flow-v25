@@ -62,18 +62,18 @@ const TaskListItem = ({ task, index, onTaskClick }: { task: TaskItem; index: num
       case 'not-started':
         return (
           <div className='govuk-task-list__status' id={statusId}>
-            <strong className='govuk-tag govuk-tag--grey'>Not yet started</strong>
+            <strong className='govuk-tag govuk-tag--blue'>Not yet started</strong>
           </div>
         );
       case 'cannot-start':
         return (
           <div className='govuk-task-list__status' id={statusId}>
-            <strong className='govuk-tag govuk-tag--grey'>Cannot start yet</strong>
+            <strong className='govuk-tag'>Cannot start yet</strong>
           </div>
         );
       default:
         return (
-          <div className='govuk-task-list__status' id={statusId}>
+          <div className='govuk-task-list__status govuk-tag--blue' id={statusId}>
             Not yet started
           </div>
         );
@@ -192,6 +192,7 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
   // Fetch tasks from D_TaskList data page
   const fetchTasks = useCallback(
     async (bypassCache = false) => {
+      console.log('Fetching tasks from data page:', dataPage, 'bypassCache:', bypassCache);
       try {
         setIsLoading(true);
         const pConnect = getPConnect();
@@ -234,12 +235,11 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
         if (window.PCore && window.PCore.getDataPageUtils) {
           const dataPageUtils = window.PCore.getDataPageUtils();
 
-          // Pass parameters object with CaseKey and optional timestamp to bypass cache
+          // Pass parameters object with CaseKey
           const parameters: any = { CaseKey: caseID };
-          if (bypassCache) {
-            parameters._timestamp = Date.now();
-          }
-          const dataPageData = await dataPageUtils.getDataAsync(dataPage, pConnect.getContextName(), parameters);
+          const dataPageData = await dataPageUtils.getDataAsync(dataPage, pConnect.getContextName(), parameters, undefined, undefined, {
+            invalidateCache: true
+          });
 
           console.log('D_TaskList dataPageData:', dataPageData);
 
