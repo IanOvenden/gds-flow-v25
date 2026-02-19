@@ -5,11 +5,14 @@ import { getDataPage } from '@pega/react-sdk-components/lib/components/helpers/d
 import handleEvent from '@pega/react-sdk-components/lib/components/helpers/event-utils';
 import { getComponentFromMap } from '@pega/react-sdk-components/lib/bridge/helpers/sdk_component_map';
 import type { PConnFieldProps } from '@pega/react-sdk-components/lib/types/PConnProps';
+import { usePegaSelector } from '../../../../utils/pegaUtils';
 
 interface IOption {
   key: string;
   value: string;
 }
+
+const SPECIAL_PAGE_VALUE = 'ComplainantCYA';
 
 const flattenParameters = (params = {}) => {
   const flatParams: any = {};
@@ -87,6 +90,9 @@ export default function Dropdown(props: DropdownProps) {
   const propName = (thePConn.getStateProps() as any).value;
   const className = thePConn.getCaseInfo().getClassName();
   const refName = propName?.slice(propName.lastIndexOf('.') + 1);
+
+  const caseContent = usePegaSelector(s => s?.data?.['app/primary_1']?.caseInfo?.content?.pyViewName, undefined as any);
+  const isSpecialCyaPage = caseContent === SPECIAL_PAGE_VALUE;
 
   if (!isDeepEqual(datasource, theDatasource)) {
     setDatasource(datasource);
@@ -176,6 +182,7 @@ export default function Dropdown(props: DropdownProps) {
   const selectId = refName || 'select';
   const hintId = `${selectId}-hint`;
   const errorId = `${selectId}-error`;
+  const shouldHide = !isSpecialCyaPage && selectId === 'CYATarget';
 
   const hasError = status === 'error' && !!validatemessage;
   const hintText = !hasError ? helperText : undefined;
@@ -183,7 +190,7 @@ export default function Dropdown(props: DropdownProps) {
   const ariaDescribedBy = [hintText ? hintId : null, hasError ? errorId : null].filter(Boolean).join(' ') || undefined;
 
   return (
-    <div className={`govuk-form-group${hasError ? ' govuk-form-group--error' : ''}`}>
+    <div className={`govuk-form-group${hasError ? ' govuk-form-group--error' : ''}`} style={shouldHide ? { display: 'none' } : undefined}>
       <label className={`govuk-label${hideLabel ? ' govuk-visually-hidden' : ''}`} htmlFor={selectId}>
         {label}
       </label>

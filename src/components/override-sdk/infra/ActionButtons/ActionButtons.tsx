@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { usePegaSelector } from '../../../../utils/pegaUtils';
 
 interface ActionButton {
   name: string;
@@ -45,33 +46,6 @@ function useElementPresent(selector: string): boolean {
   }, [selector]);
 
   return present;
-}
-
-function getPCoreStore(): any | undefined {
-  // @ts-ignore
-  if (typeof PCore === 'undefined' || !PCore.getStore) return undefined;
-  // @ts-ignore
-  return PCore.getStore();
-}
-
-function usePegaSelector<T>(selector: (s: any) => T, initial: T): T {
-  const [val, setVal] = useState<T>(() => {
-    const s = getPCoreStore()?.getState?.();
-    return s ? selector(s) : initial;
-  });
-
-  useEffect(() => {
-    const store = getPCoreStore();
-    if (!store?.subscribe || !store?.getState) return;
-
-    const compute = () => setVal(selector(store.getState()));
-    compute();
-
-    const unsub = store.subscribe(compute);
-    return () => unsub?.();
-  }, [selector]);
-
-  return val;
 }
 
 function setSelectToCyaIfPresent(): void {
@@ -188,7 +162,7 @@ export default function ActionButtons(props: ActionButtonsProps) {
 
   // Signals
   const cyaTargetPresent = useElementPresent(CYATARGET_SELECTOR);
-  const caseContent = usePegaSelector(s => s?.data?.['app/primary_1']?.caseInfo?.content, undefined as any);
+  const caseContent = usePegaSelector(s => s?.data?.['app/primary_1']?.caseInfo?.content?.pyViewName, undefined as any);
   const isSpecialCyaPage = caseContent === SPECIAL_PAGE_VALUE;
 
   const processHref = usePegaSelector(s => s?.data?.['app/primary_1']?.caseInfo?.availableProcesses?.[1]?.links?.add?.href, undefined as any) as
