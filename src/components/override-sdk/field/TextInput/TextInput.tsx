@@ -28,9 +28,10 @@ export default function TextInput(props: TextInputProps) {
     handleEvent(actionsApi, 'changeNblur', propName, newValue);
   };
 
-  /**
-   * NORMAL INPUT MODE
-   */
+  if (readOnly) {
+    console.log(readOnly);
+  }
+
   return (
     <div className={`govuk-form-group${hasError ? ' govuk-form-group--error' : ''}`}>
       <label className={`govuk-label${hideLabel ? ' govuk-visually-hidden' : ''}`} htmlFor={refName}>
