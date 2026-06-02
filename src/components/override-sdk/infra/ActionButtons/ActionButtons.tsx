@@ -23,6 +23,7 @@ interface ActionButtonsProps {
 const CYATARGET_SELECTOR = '#CYATarget';
 const SPECIAL_PAGE_VALUE = 'ComplainantCYA';
 const CYA_OPTION_VALUE = 'CYA';
+const TASK_LIST_VIEW = 'StartTaskList';
 
 const isRealPreviousButton = (btn: ActionButton) => btn?.jsAction === 'navigateToStep';
 
@@ -164,6 +165,7 @@ export default function ActionButtons(props: ActionButtonsProps) {
   const cyaTargetPresent = useElementPresent(CYATARGET_SELECTOR);
   const caseContent = usePegaSelector(s => s?.data?.['app/primary_1']?.caseInfo?.content?.pyViewName, undefined as any);
   const isSpecialCyaPage = caseContent === SPECIAL_PAGE_VALUE;
+  const isTaskListView = caseContent === TASK_LIST_VIEW;
 
   const processHref = usePegaSelector(s => s?.data?.['app/primary_1']?.caseInfo?.availableProcesses?.[1]?.links?.add?.href, undefined as any) as
     | string
@@ -269,17 +271,19 @@ export default function ActionButtons(props: ActionButtonsProps) {
         {isPosting ? 'Back…' : 'Back'}
       </a>
 
-      {arMainButtons.map(button => (
-        <button
-          key={button.name}
-          type='button'
-          className='govuk-button'
-          data-module='govuk-button'
-          onClick={() => onButtonPress(button.jsAction, 'primary', button)}
-        >
-          {renderLabel(button.name)}
-        </button>
-      ))}
+      {arMainButtons
+        .filter(button => !(isTaskListView && button.name?.toLowerCase() === 'continue'))
+        .map(button => (
+          <button
+            key={button.name}
+            type='button'
+            className='govuk-button'
+            data-module='govuk-button'
+            onClick={() => onButtonPress(button.jsAction, 'primary', button)}
+          >
+            {renderLabel(button.name)}
+          </button>
+        ))}
 
       {arSecondaryButtons
         .filter(b => !isRealPreviousButton(b) && !b.name?.toLowerCase().includes('cancel'))
