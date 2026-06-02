@@ -282,17 +282,37 @@ export default function ActionButtons(props: ActionButtonsProps) {
       ))}
 
       {arSecondaryButtons
-        .filter(b => !isRealPreviousButton(b))
+        .filter(b => !isRealPreviousButton(b) && !b.name?.toLowerCase().includes('cancel'))
+        .map(button =>
+          button.name?.toLowerCase().includes('later') ? null : (
+            <button
+              key={button.name}
+              type='button'
+              className='govuk-button govuk-button--secondary'
+              data-module='govuk-button'
+              onClick={() => onButtonPress(button.jsAction, 'secondary', button)}
+            >
+              {renderLabel(button.name)}
+            </button>
+          )
+        )}
+
+      {arSecondaryButtons
+        .filter(b => !isRealPreviousButton(b) && !b.name?.toLowerCase().includes('cancel') && b.name?.toLowerCase().includes('later'))
         .map(button => (
-          <button
-            key={button.name}
-            type='button'
-            className='govuk-button govuk-button--secondary'
-            data-module='govuk-button'
-            onClick={() => onButtonPress(button.jsAction, 'secondary', button)}
-          >
-            {renderLabel(button.name)}
-          </button>
+          <React.Fragment key={button.name}>
+            <div style={{ flexBasis: '100%', height: 0 }} />
+            <a
+              href='#'
+              className='govuk-link'
+              onClick={e => {
+                e.preventDefault();
+                onButtonPress(button.jsAction, 'secondary', button);
+              }}
+            >
+              {renderLabel(button.name)}
+            </a>
+          </React.Fragment>
         ))}
     </div>
   );
