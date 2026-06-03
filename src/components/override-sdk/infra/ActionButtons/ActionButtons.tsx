@@ -19,8 +19,10 @@ const SPECIAL_PAGE_VALUE = 'ComplainantCYA';
 const TASK_LIST_VIEW = 'StartTaskList';
 const CYA_OPTION_VALUE = 'CYA';
 
-const isRealPreviousButton = (btn: ActionButton) =>
-  btn?.jsAction === 'navigateToStep';
+const CURRENT_VIEW_STORAGE_KEY = 'actionButtons.currentViewName';
+const PREVIOUS_VIEW_STORAGE_KEY = 'actionButtons.previousViewName';
+
+const isRealPreviousButton = (btn: ActionButton) => btn?.jsAction === 'navigateToStep';
 
 const pickPrimaryAdvanceButton = (buttons: ActionButton[]) => {
   const preferred = ['Continue', 'Next', 'Save and continue', 'Advance', 'Submit'];
@@ -47,9 +49,7 @@ function setSelectToCyaIfPresent(): void {
   const selectEl = document.querySelector(CYATARGET_SELECTOR) as HTMLSelectElement | null;
   if (!selectEl) return;
 
-  const hasCya = Array.from(selectEl.options).some(
-    opt => opt.value === CYA_OPTION_VALUE
-  );
+  const hasCya = Array.from(selectEl.options).some(opt => opt.value === CYA_OPTION_VALUE);
 
   if (hasCya && selectEl.value !== CYA_OPTION_VALUE) {
     selectEl.value = CYA_OPTION_VALUE;
@@ -58,39 +58,43 @@ function setSelectToCyaIfPresent(): void {
   }
 }
 
-export default function ActionButtons({
-  arMainButtons = [],
-  arSecondaryButtons = [],
-  onButtonPress
-}: ActionButtonsProps) {
+function updateViewHistory(currentViewName?: string): void {
+  if (typeof window === 'undefined' || !currentViewName) return;
 
-  const localizedVal =
-    typeof PCore !== 'undefined'
-      ? PCore.getLocaleUtils().getLocaleValue
-      : undefined;
+  const storedCurrentView = sessionStorage.getItem(CURRENT_VIEW_STORAGE_KEY);
 
-  const renderLabel = (name: string) =>
-    localizedVal ? localizedVal(name, 'Assignment') : name;
+  if (storedCurrentView !== currentViewName) {
+    if (storedCurrentView) {
+      sessionStorage.setItem(PREVIOUS_VIEW_STORAGE_KEY, storedCurrentView);
+    }
+    sessionStorage.setItem(CURRENT_VIEW_STORAGE_KEY, currentViewName);
+  }
+}
+
+function getPreviousViewName(): string | null {
+  if (typeof window === 'undefined') return null;
+  return sessionStorage.getItem(PREVIOUS_VIEW_STORAGE_KEY);
+}
+
+export default function ActionButtons({ arMainButtons = [], arSecondaryButtons = [], onButtonPress }: ActionButtonsProps) {
+  const localizedVal = typeof PCore !== 'undefined' ? PCore.getLocaleUtils().getLocaleValue : undefined;
+
+  const renderLabel = (name: string) => (localizedVal ? localizedVal(name, 'Assignment') : name);
 
   const cyaTargetPresent = useElementPresent(CYATARGET_SELECTOR);
 
-  const caseContent = usePegaSelector(
-    s => s?.data?.['app/primary_1']?.caseInfo?.content?.pyViewName,
-    undefined as any
-  );
+  const caseContent = usePegaSelector(s => s?.data?.['app/primary_1']?.caseInfo?.content?.pyViewName, undefined as any);
 
   const isSpecialCyaPage = caseContent === SPECIAL_PAGE_VALUE;
   const isTaskListView = caseContent === TASK_LIST_VIEW;
 
-  const realPrevious = useMemo(
-    () => arSecondaryButtons.find(b => isRealPreviousButton(b)),
-    [arSecondaryButtons]
-  );
+  useEffect(() => {
+    updateViewHistory(caseContent);
+  }, [caseContent]);
 
-  const primaryAdvance = useMemo(
-    () => pickPrimaryAdvanceButton(arMainButtons),
-    [arMainButtons]
-  );
+  const realPrevious = useMemo(() => arSecondaryButtons.find(b => isRealPreviousButton(b)), [arSecondaryButtons]);
+
+  const primaryAdvance = useMemo(() => pickPrimaryAdvanceButton(arMainButtons), [arMainButtons]);
 
   const runRealPrevious = () => {
     if (realPrevious?.jsAction) {
@@ -108,13 +112,17 @@ export default function ActionButtons({
   const handleBackClick = () => {
     const selectEl = document.querySelector(CYATARGET_SELECTOR) as HTMLSelectElement | null;
     const cyaValue = selectEl?.value;
+    const previousViewName = getPreviousViewName();
+    const cameFromTaskList = previousViewName === TASK_LIST_VIEW;
 
     // Dependent question case
-    if (
-      caseContent === 'SelectPhoneTypeMobileLandlineWorkOther' &&
-      cyaTargetPresent &&
-      cyaValue === 'Phone Number'
-    ) {
+    if (caseContent === 'SelectPhoneTypeMobileLandlineWorkOther' && cyaTargetPresent && cyaValue === 'Phone Number') {
+      runRealPrevious();
+      return;
+    }
+
+    // If this page was reached from the task list, go back normally
+    if (cameFromTaskList) {
       runRealPrevious();
       return;
     }
@@ -156,11 +164,7 @@ export default function ActionButtons({
       {arMainButtons
         .filter(btn => !(isTaskListView && btn.name?.toLowerCase() === 'continue'))
         .map(btn => (
-          <button
-            key={btn.name}
-            className='govuk-button'
-            onClick={() => onButtonPress(btn.jsAction, 'primary', btn)}
-          >
+          <button key={btn.name} className='govuk-button' onClick={() => onButtonPress(btn.jsAction, 'primary', btn)}>
             {renderLabel(btn.name)}
           </button>
         ))}
@@ -169,22 +173,14 @@ export default function ActionButtons({
         .filter(b => !isRealPreviousButton(b) && !b.name?.toLowerCase().includes('cancel'))
         .map(btn =>
           btn.name?.toLowerCase().includes('later') ? null : (
-            <button
-              key={btn.name}
-              className='govuk-button govuk-button--secondary'
-              onClick={() => onButtonPress(btn.jsAction, 'secondary', btn)}
-            >
+            <button key={btn.name} className='govuk-button govuk-button--secondary' onClick={() => onButtonPress(btn.jsAction, 'secondary', btn)}>
               {renderLabel(btn.name)}
             </button>
           )
         )}
 
       {arSecondaryButtons
-        .filter(b =>
-          !isRealPreviousButton(b) &&
-          !b.name?.toLowerCase().includes('cancel') &&
-          b.name?.toLowerCase().includes('later')
-        )
+        .filter(b => !isRealPreviousButton(b) && !b.name?.toLowerCase().includes('cancel') && b.name?.toLowerCase().includes('later'))
         .map(btn => (
           <React.Fragment key={btn.name}>
             <div style={{ flexBasis: '100%', height: 0 }} />
