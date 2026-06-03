@@ -228,27 +228,37 @@ export default function ActionButtons(props: ActionButtonsProps) {
   };
 
   const handleBackClick = async () => {
-    // 1) Special CYA page: keep previous exactly as platform provides
-    if (isSpecialCyaPage) {
+    const selectEl = document.querySelector(CYATARGET_SELECTOR) as HTMLSelectElement | null;
+    const cyaValue = selectEl?.value;
+
+    // It's a dependant Q, we need to go back normally
+    if (
+      caseContent === 'SelectPhoneTypeMobileLandlineWorkOther' &&
+      cyaTargetPresent &&
+      cyaValue === 'Phone Number'
+    ) {
       runRealPrevious();
       return;
     }
 
-    // 2) No real previous + CYATarget present: set to 'CYA' then run primary
-    if (!realPrevious && cyaTargetPresent) {
+    // its the first run through, back is normal previous button
+    if (!cyaTargetPresent) {
+      runRealPrevious();
+      return;
+    }
+
+    // We're on CYA, also go back
+    if (cyaTargetPresent && isSpecialCyaPage) {
+      runRealPrevious();
+      return;
+    }
+
+    // Rule 2: On step (not CYA, not task list) → go back to CYA
+    if (cyaTargetPresent && !isSpecialCyaPage && !isTaskListView) {
       setSelectToCyaIfPresent();
       runPrimaryAdvance();
       return;
     }
-
-    // 3) No real previous + no CYATarget: POST stage/process endpoint
-    if (!realPrevious && !cyaTargetPresent) {
-      await runStageChange();
-      return;
-    }
-
-    // 4) Otherwise: use real previous
-    runRealPrevious();
   };
 
   if (!arMainButtons.length && !arSecondaryButtons.length) return null;

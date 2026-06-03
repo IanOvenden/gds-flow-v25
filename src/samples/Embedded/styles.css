@@ -26,3 +26,9 @@
 #pega-part-of-page .MuiCardContent-root:last-child {
   padding-bottom: 0px !important;
 }
+
+.govuk-back-link {
+  position: absolute !important;
+  top: 175px !important;
+  margin-left: -90px !important;
+}
