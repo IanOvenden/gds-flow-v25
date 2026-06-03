@@ -29,7 +29,7 @@ const QUESTION_TO_CYA_TARGET_VALUE: Record<string, string> = {
   'ActivePhone': 'Phone Number',
   'Phone Number' : 'Phone Number',
   'Phone Type' : 'Phone Type',
-  'Preferred Contact Window' : 'Contact Window'
+  'When is the best time to call you on this number?' : 'Contact Window'
 };
 
 const Child: React.ComponentType<any> = connectToState(mapStateToProps)((props: any) => {
