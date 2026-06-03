@@ -192,41 +192,6 @@ export default function ActionButtons(props: ActionButtonsProps) {
     }
   };
 
-  const runStageChange = async () => {
-    if (!processHref) {
-      console.warn('Back clicked but process href was not found in PCore state.');
-      return;
-    }
-
-    try {
-      setIsPosting(true);
-
-      const response = await postChangeStageViaPCore(processHref);
-      console.log('Process API response:', response);
-
-      const responseData = (response as any)?.data || response;
-      const nextAssignmentInfo = responseData?.nextAssignmentInfo;
-
-      const opened = await openNextAssignmentIfPossible(nextAssignmentInfo);
-
-      // Always publish refresh; helps keep UI consistent
-      publishAssignmentRefresh();
-
-      // Optional: refresh task list if your app exposes this
-      if (typeof triggerRefresh === 'function') {
-        triggerRefresh();
-      }
-
-      if (!opened) {
-        console.log('Next assignment could not be opened directly; refresh event published.');
-      }
-    } catch (error) {
-      console.error('Error calling process API:', error);
-    } finally {
-      setIsPosting(false);
-    }
-  };
-
   const handleBackClick = async () => {
     const selectEl = document.querySelector(CYATARGET_SELECTOR) as HTMLSelectElement | null;
     const cyaValue = selectEl?.value;
