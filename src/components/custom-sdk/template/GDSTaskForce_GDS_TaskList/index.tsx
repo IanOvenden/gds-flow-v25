@@ -27,6 +27,36 @@ interface GdsTaskForceGdsTaskListProps extends PConnProps {
   dataPage?: string;
 }
 
+const ASSIGNMENT_OPENING_LOCK_MS = 8000;
+const TASKLIST_DEBUG = false;
+
+// Module-level lock so assignment opening state survives component remounts.
+let assignmentOpeningLockUntil = 0;
+
+const setAssignmentOpeningLock = (isLocked: boolean, durationMs = ASSIGNMENT_OPENING_LOCK_MS) => {
+  assignmentOpeningLockUntil = isLocked ? Date.now() + durationMs : 0;
+};
+
+const getAssignmentOpeningLock = () => {
+  if (assignmentOpeningLockUntil > 0 && Date.now() >= assignmentOpeningLockUntil) {
+    assignmentOpeningLockUntil = 0;
+  }
+  return assignmentOpeningLockUntil > 0;
+};
+
+const getAssignmentOpeningLockRemainingMs = () => {
+  if (!getAssignmentOpeningLock()) {
+    return 0;
+  }
+  return Math.max(assignmentOpeningLockUntil - Date.now(), 0);
+};
+
+const debugLog = (...args: any[]) => {
+  if (TASKLIST_DEBUG) {
+    console.log(...args);
+  }
+};
+
 /**
  * Renders a GDS-compliant task list component
  * @param task - Task item to render
@@ -103,6 +133,7 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
   const instructions = getInstructions(getPConnect(), props.instructions);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOpeningAssignment, setIsOpeningAssignment] = useState(getAssignmentOpeningLock());
 
   // Normalize status from Pega to GDS format
   const normalizeStatus = useCallback((status: string): TaskItem['status'] => {
@@ -182,7 +213,7 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
     // Only return a match if score is > 0
     const bestMatch = scoredProcesses[0];
     if (bestMatch && bestMatch.score > 0) {
-      console.log(`Best match for "${taskName}": ${bestMatch.process.ID} (score: ${bestMatch.score})`);
+      debugLog(`Best match for "${taskName}": ${bestMatch.process.ID} (score: ${bestMatch.score})`);
       return bestMatch.process;
     }
 
@@ -192,7 +223,7 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
   // Fetch tasks from D_TaskList data page
   const fetchTasks = useCallback(
     async (bypassCache = false) => {
-      console.log('Fetching tasks from data page:', dataPage, 'bypassCache:', bypassCache);
+      debugLog('Fetching tasks from data page:', dataPage, 'bypassCache:', bypassCache);
       try {
         setIsLoading(true);
         const pConnect = getPConnect();
@@ -220,16 +251,16 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
           }
         }
 
-        console.log('D_TaskList - Case ID:', caseID);
-        console.log('D_TaskList - Context:', pConnect.getContextName());
-        console.log('D_TaskList - Bypass cache:', bypassCache);
+        debugLog('D_TaskList - Case ID:', caseID);
+        debugLog('D_TaskList - Context:', pConnect.getContextName());
+        debugLog('D_TaskList - Bypass cache:', bypassCache);
 
         // Extract available processes and actions from caseInfo
         const availableProcessesList = dataObject?.caseInfo?.availableProcesses || [];
         const availableActions = dataObject?.caseInfo?.availableActions || [];
 
-        console.log('Available Processes:', availableProcessesList);
-        console.log('Available Actions:', availableActions);
+        debugLog('Available Processes:', availableProcessesList);
+        debugLog('Available Actions:', availableActions);
 
         // Try to get data from PCore DataPageUtils first
         if (window.PCore && window.PCore.getDataPageUtils) {
@@ -241,12 +272,12 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
             invalidateCache: true
           });
 
-          console.log('D_TaskList dataPageData:', dataPageData);
+          debugLog('D_TaskList dataPageData:', dataPageData);
 
           // getDataAsync returns { data: [] } structure
           const results = (dataPageData as any)?.data || (dataPageData as any)?.pxResults;
 
-          console.log('D_TaskList results:', results);
+          debugLog('D_TaskList results:', results);
 
           if (results && Array.isArray(results)) {
             // Map the data page results to TaskItem format
@@ -260,7 +291,7 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
               // Use the action href if available, otherwise fall back to task URL
               const taskHref = matchedProcess?.links?.add?.href || item.URL || item.pyURL || `#${taskID}`;
 
-              console.log(`Mapping task "${taskName}" (${taskID}) to process:`, matchedProcess?.ID || 'none');
+              debugLog(`Mapping task "${taskName}" (${taskID}) to process:`, matchedProcess?.ID || 'none');
 
               return {
                 id: taskID,
@@ -271,10 +302,10 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
                 action: matchedProcess // Store the matched process for potential future use
               };
             });
-            console.log('Mapped taskList:', taskList);
+            debugLog('Mapped taskList:', taskList);
             setTasks(taskList);
           } else {
-            console.log('No results found or results is not an array');
+            debugLog('No results found or results is not an array');
             setTasks([]);
           }
         } else {
@@ -329,8 +360,8 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
         const pConnect = getPConnect();
         const processID = task.action.ID;
 
-        console.log(`Calling process API for: ${processID}`);
-        console.log('Process details:', task.action);
+        debugLog(`Calling process API for: ${processID}`);
+        debugLog('Process details:', task.action);
 
         // Get the case ID
         const dataObject = pConnect.getDataObject?.() as any;
@@ -357,35 +388,95 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
             pConnect.getContextName()
           );
 
-          console.log('Process API response:', response);
+          debugLog('Process API response:', response);
 
           const responseData = (response as any)?.data || response;
           const nextAssignmentInfo = responseData?.nextAssignmentInfo;
 
           if (nextAssignmentInfo?.ID && nextAssignmentInfo?.className) {
-            const actionsApi = pConnect.getActionsApi?.();
-            if (actionsApi?.openAssignment) {
-              const containerName = PCore.getConstants().PRIMARY;
-              const contextName = pConnect.getContextName?.() || undefined;
+            const assignmentID = String(nextAssignmentInfo.ID).trim();
+            const containerName = pConnect.getContainerName?.() || PCore.getConstants().PRIMARY;
+            const contextName = pConnect.getContextName?.() || undefined;
+            const targetContext = contextName || PCore.getConstants().APP.APP;
+            const appContext = PCore.getConstants().APP.APP;
+            const caseClassName = dataObject?.caseInfo?.content?.classID || dataObject?.caseInfo?.classID || '';
+            const mashupApi = (window.PCore as any)?.getMashupApi?.();
+            const caseApi = (window.PCore as any)?.getBootstrapUtils?.()?.getCaseApi?.();
 
-              await actionsApi.openAssignment(nextAssignmentInfo.ID, nextAssignmentInfo.className, {
-                containerName,
-                context: contextName
-              });
-              return;
+            debugLog('Calling task navigation with:', {
+              id: assignmentID,
+              className: nextAssignmentInfo.className,
+              caseClassName,
+              caseID,
+              containerName,
+              contextName,
+              targetContext,
+              appContext,
+              caseApiOpenAssignmentAvailable: !!caseApi?.openAssignment,
+              mashupApiOpenCaseAvailable: !!mashupApi?.openCase,
+              mashupApiOpenAssignmentAvailable: !!mashupApi?.openAssignment
+            });
+
+            setAssignmentOpeningLock(true);
+            setIsOpeningAssignment(true);
+
+            try {
+              // Primary path: use lower-level CaseApi.openAssignment to dispatch assignmentID
+              // directly with explicit context/target.
+              if (assignmentID && caseApi?.openAssignment) {
+                const caseApiOpenOptions: any = {
+                  pageName: PCore.getConstants().VIEW_TYPE.PY_EMBEDASSIGNMENT,
+                  channelName: '',
+                  skipFlowNameCheck: true
+                };
+
+                await caseApi.openAssignment(assignmentID, appContext, PCore.getConstants().PRIMARY, caseApiOpenOptions);
+
+                debugLog('openAssignment completed successfully via CaseApi (APP.APP/primary, pyEmbedAssignment)');
+                return;
+              }
+
+              // Fallback: open case details if CaseApi assignment open is unavailable.
+              if (caseID && mashupApi?.openCase) {
+                await mashupApi.openCase(caseID, targetContext, {
+                  pageName: PCore.getConstants().VIEW_TYPE.PY_DETAILS
+                });
+
+                debugLog('openCase completed successfully via MashupApi (pyDetails)');
+                return;
+              }
+
+              // Fallback: open by work handle if mashup case API is unavailable.
+              if (caseID && caseClassName && pConnect.getActionsApi?.()?.openWorkByHandle) {
+                await pConnect.getActionsApi().openWorkByHandle(caseID, caseClassName, {
+                  targetContainer: containerName,
+                  viewType: PCore.getConstants().VIEW_TYPE.PY_DETAILS,
+                  channelName: ''
+                });
+                debugLog('openWorkByHandle completed successfully via ActionsApi (pyDetails)');
+                return;
+              }
+
+              console.warn('No compatible case navigation API found');
+              setAssignmentOpeningLock(false);
+              setIsOpeningAssignment(false);
+            } catch (error) {
+              console.error('Error calling task navigation API:', error);
+              // Reset lock only on error so we can retry if needed.
+              setAssignmentOpeningLock(false);
+              setIsOpeningAssignment(false);
+              // Fall through to refresh on error
             }
-          }
 
-          // Refresh the work area to show the new assignment/view
-          if (window.PCore) {
-            // Trigger a refresh event to update the UI
-            PCore.getPubSubUtils().publish(PCore.getConstants().PUB_SUB_EVENTS.CASE_EVENTS.ASSIGNMENT_SUBMISSION, {});
+            // Only reach here if navigation failed or was not available
+            debugLog('Failed to navigate to assignment view - refreshing...');
+            if (window.PCore) {
+              PCore.getPubSubUtils().publish(PCore.getConstants().PUB_SUB_EVENTS.CASE_EVENTS.ASSIGNMENT_SUBMISSION, {});
+            }
+            await fetchTasks(true);
+          } else {
+            console.warn('Cannot open assignment - missing ID or className');
           }
-
-          // Refetch the task list to reflect updated statuses (only if still on task list view)
-          // Use bypassCache=true to ensure fresh data
-          console.log('Refetching D_TaskList after process completion...');
-          await fetchTasks(true);
         } else {
           console.warn('PCore not available');
         }
@@ -398,8 +489,30 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
 
   // Initial fetch of tasks on component mount
   useEffect(() => {
+    const lockActive = getAssignmentOpeningLock();
+
+    // Skip the initial fetch if we're currently opening an assignment
+    // to prevent interference with the SDK's internal operations
+    if (lockActive) {
+      const remainingMs = getAssignmentOpeningLockRemainingMs();
+      debugLog('Skipping initial fetch - assignment is being opened', { remainingMs });
+
+      const timer = window.setTimeout(() => {
+        setIsOpeningAssignment(getAssignmentOpeningLock());
+      }, remainingMs + 50);
+
+      return () => {
+        window.clearTimeout(timer);
+      };
+    }
+
+    if (isOpeningAssignment) {
+      setIsOpeningAssignment(false);
+    }
+
+    // Lock has expired/cleared, safe to fetch task list again.
     fetchTasks();
-  }, [fetchTasks]);
+  }, [fetchTasks, isOpeningAssignment]);
 
   if (isLoading) {
     return (
