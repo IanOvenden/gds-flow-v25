@@ -392,20 +392,32 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
 
           const responseData = (response as any)?.data || response;
           const nextAssignmentInfo = responseData?.nextAssignmentInfo;
+          const responseAssignments = responseData?.caseInfo?.assignments;
+          const fallbackAssignment = Array.isArray(responseAssignments)
+            ? responseAssignments.find((assignment: any) => String(assignment?.canPerform).toLowerCase() === 'true') || responseAssignments[0]
+            : undefined;
 
-          if (nextAssignmentInfo?.ID && nextAssignmentInfo?.className) {
-            const assignmentID = String(nextAssignmentInfo.ID).trim();
+          const assignmentID = String(nextAssignmentInfo?.ID || fallbackAssignment?.ID || '').trim();
+          const assignmentClassName = String(nextAssignmentInfo?.className || fallbackAssignment?.className || '').trim();
+
+          if (assignmentID) {
             const containerName = pConnect.getContainerName?.() || PCore.getConstants().PRIMARY;
             const contextName = pConnect.getContextName?.() || undefined;
             const targetContext = contextName || PCore.getConstants().APP.APP;
             const appContext = PCore.getConstants().APP.APP;
-            const caseClassName = dataObject?.caseInfo?.content?.classID || dataObject?.caseInfo?.classID || '';
+            const responseCaseInfo = responseData?.caseInfo;
+            const caseClassName =
+              responseCaseInfo?.content?.classID ||
+              responseCaseInfo?.classID ||
+              dataObject?.caseInfo?.content?.classID ||
+              dataObject?.caseInfo?.classID ||
+              '';
             const mashupApi = (window.PCore as any)?.getMashupApi?.();
             const caseApi = (window.PCore as any)?.getBootstrapUtils?.()?.getCaseApi?.();
 
             debugLog('Calling task navigation with:', {
               id: assignmentID,
-              className: nextAssignmentInfo.className,
+              className: assignmentClassName || undefined,
               caseClassName,
               caseID,
               containerName,
@@ -475,7 +487,8 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
             }
             await fetchTasks(true);
           } else {
-            console.warn('Cannot open assignment - missing ID or className');
+            console.warn('Cannot open assignment - no assignment ID returned from process API response');
+            await fetchTasks(true);
           }
         } else {
           console.warn('PCore not available');
