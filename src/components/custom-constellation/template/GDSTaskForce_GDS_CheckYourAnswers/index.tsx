@@ -1,6 +1,5 @@
 import { Grid, Flex, FieldGroup, withConfiguration } from '@pega/cosmos-react-core';
 
-
 import type { PConnFieldProps } from './PConnProps';
 import './create-nonce';
 import DetailsRender from './DetailsRender';
@@ -18,14 +17,12 @@ interface GdsTaskForceGdsCheckYourAnswersProps extends PConnFieldProps {
 // props passed in combination of props from property panel (config.json) and run time props from Constellation
 // any default values in config.pros should be set in defaultProps at bottom of this file
 function GdsTaskForceGdsCheckYourAnswers(props: GdsTaskForceGdsCheckYourAnswersProps) {
-
   const { children = [], NumCols = '1', label, showLabel, getPConnect, readOnly, displayMode } = props;
   const propsToUse = { label, showLabel, ...getPConnect().getInheritedProps() };
 
   const nCols = parseInt(NumCols, 10);
 
-
-  if (readOnly && readOnly === true || displayMode && displayMode === 'DISPLAY_ONLY') {
+  if ((readOnly && readOnly === true) || (displayMode && displayMode === 'DISPLAY_ONLY')) {
     const numRegions = '1';
     const gridRepeat = 'repeat('.concat(numRegions).concat(', 1fr)');
     const gridContainer = { colGap: 0, 'margin-line-start': 0 };
@@ -54,18 +51,18 @@ function GdsTaskForceGdsCheckYourAnswers(props: GdsTaskForceGdsCheckYourAnswersP
   }
   return (
     <StyledGdsTaskForceGdsCheckYourAnswersWrapper>
-    <FieldGroup name={propsToUse.showLabel ? propsToUse.label : ''}>
-      <Grid container={{
+      <FieldGroup name={propsToUse.showLabel ? propsToUse.label : ''}>
+        <Grid
+          container={{
             cols: `repeat(${nCols}, minmax(0, 1fr))`,
             gap: 2
-          }}>
-            {children}
-      </Grid>
-    </FieldGroup>
+          }}
+        >
+          {children}
+        </Grid>
+      </FieldGroup>
     </StyledGdsTaskForceGdsCheckYourAnswersWrapper>
   );
-
-
 }
 
 export default withConfiguration(GdsTaskForceGdsCheckYourAnswers);
