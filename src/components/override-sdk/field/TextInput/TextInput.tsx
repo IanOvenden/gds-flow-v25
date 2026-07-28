@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import handleEvent from '@pega/react-sdk-components/lib/components/helpers/event-utils';
+import { getComponentFromMap } from '@pega/react-sdk-components/lib/bridge/helpers/sdk_component_map';
 import type { PConnFieldProps } from '@pega/react-sdk-components/lib/types/PConnProps';
 
 interface TextInputProps extends PConnFieldProps {
   fieldMetadata?: any;
+  displayMode?: string;
 }
 
 export default function TextInput(props: TextInputProps) {
-  const { getPConnect, label, required, disabled, value = '', validatemessage, status, readOnly, testId, helperText, hideLabel } = props;
+  const FieldValueList = getComponentFromMap('FieldValueList');
+
+  const { getPConnect, label, required, disabled, value = '', validatemessage, status, readOnly, testId, helperText, hideLabel, displayMode } = props;
 
   const [inputValue, setInputValue] = useState(value);
 
@@ -30,6 +34,10 @@ export default function TextInput(props: TextInputProps) {
 
   if (readOnly) {
     console.log(readOnly);
+  }
+
+  if (displayMode === 'DISPLAY_ONLY') {
+    return <FieldValueList name={hideLabel ? '' : label} value={value} />;
   }
 
   return (
