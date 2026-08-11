@@ -10,6 +10,7 @@ import GdsTaskForceGdsTaskList from './src/components/custom-sdk/template/GDSTas
 import GdsTaskForceGdsCheckYourAnswers from './src/components/custom-sdk/template/GDSTaskForce_GDS_CheckYourAnswers/';
 import FlowContainer from './src/components/override-sdk/infra/FlowContainer/';
 import DefaultForm from './src/components/override-sdk/template/DefaultForm/';
+import Phone from './src/components/override-sdk/field/Phone/';
 /* import end - DO NOT REMOVE */
 
 // localSdkComponentMap is the JSON object where we'll store the components that are
@@ -25,7 +26,8 @@ const localSdkComponentMap = {
   GDSTaskForce_GDS_TaskList: GdsTaskForceGdsTaskList,
   GDSTaskForce_GDS_CheckYourAnswers: GdsTaskForceGdsCheckYourAnswers,
   FlowContainer: FlowContainer,
-  DefaultForm: DefaultForm
+  DefaultForm: DefaultForm,
+  Phone: Phone
   /* map end - DO NOT REMOVE */
 };
 
