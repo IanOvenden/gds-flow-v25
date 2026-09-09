@@ -25,7 +25,7 @@ const localSdkComponentMap = {
   GDSTaskForce_GDS_HierarchicalFormTaskList: GdsTaskForceGdsHierarchicalFormTaskList,
   GDSTaskForce_GDS_TaskList: GdsTaskForceGdsTaskList,
   GDSTaskForce_GDS_CheckYourAnswers: GdsTaskForceGdsCheckYourAnswers,
-  AssignmentCard: AssignmentCard
+  AssignmentCard: AssignmentCard,
   FlowContainer: FlowContainer,
   DefaultForm: DefaultForm
   /* map end - DO NOT REMOVE */
