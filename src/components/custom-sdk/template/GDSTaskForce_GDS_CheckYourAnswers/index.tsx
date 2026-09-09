@@ -26,10 +26,10 @@ const QUESTION_TO_CYA_TARGET_VALUE: Record<string, string> = {
   'Complainant Middle Name': 'Name',
   'Complainant Last Name': 'Name',
   'Complainant Addresses': 'Address',
-  'ActivePhone': 'Phone Number',
-  'Phone Number' : 'Phone Number',
-  'Phone Type' : 'Phone Type',
-  'When is the best time to call you on this number?' : 'Contact Window'
+  ActivePhone: 'Phone Number',
+  'Phone Number': 'Phone Number',
+  'Phone Type': 'Phone Type',
+  'When is the best time to call you on this number?': 'Contact Window'
 };
 
 const Child: React.ComponentType<any> = connectToState(mapStateToProps)((props: any) => {

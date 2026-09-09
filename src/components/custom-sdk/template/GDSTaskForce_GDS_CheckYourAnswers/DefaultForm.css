@@ -28,6 +28,6 @@
   display: none;
 }
 
-label[for="CYATarget"] {
+label[for='CYATarget'] {
   display: none !important;
 }
