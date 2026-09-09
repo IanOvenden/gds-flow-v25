@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { usePegaSelector } from '../../../../utils/pegaUtils';
 
 interface ActionButton {
   name: string;
@@ -9,6 +8,7 @@ interface ActionButton {
 }
 
 interface ActionButtonsProps {
+  getPConnect: () => any;
   arMainButtons?: ActionButton[];
   arSecondaryButtons?: ActionButton[];
   onButtonPress: (action: string, type: 'primary' | 'secondary', button?: ActionButton) => void;
@@ -18,9 +18,6 @@ const CYATARGET_SELECTOR = '#CYATarget';
 const SPECIAL_PAGE_VALUE = 'ComplainantCYA';
 const TASK_LIST_VIEW = 'StartTaskList';
 const CYA_OPTION_VALUE = 'CYA';
-
-const CURRENT_VIEW_STORAGE_KEY = 'actionButtons.currentViewName';
-const PREVIOUS_VIEW_STORAGE_KEY = 'actionButtons.previousViewName';
 
 const isRealPreviousButton = (btn: ActionButton) => btn?.jsAction === 'navigateToStep';
 
@@ -58,42 +55,21 @@ function setSelectToCyaIfPresent(): void {
   }
 }
 
-function updateViewHistory(currentViewName?: string): void {
-  if (typeof window === 'undefined' || !currentViewName) return;
-
-  const storedCurrentView = sessionStorage.getItem(CURRENT_VIEW_STORAGE_KEY);
-
-  if (storedCurrentView !== currentViewName) {
-    if (storedCurrentView) {
-      sessionStorage.setItem(PREVIOUS_VIEW_STORAGE_KEY, storedCurrentView);
-    }
-    sessionStorage.setItem(CURRENT_VIEW_STORAGE_KEY, currentViewName);
-  }
-}
-
-function getPreviousViewName(): string | null {
-  if (typeof window === 'undefined') return null;
-  return sessionStorage.getItem(PREVIOUS_VIEW_STORAGE_KEY);
-}
-
-export default function ActionButtons({ arMainButtons = [], arSecondaryButtons = [], onButtonPress }: ActionButtonsProps) {
+export default function ActionButtons({ getPConnect, arMainButtons = [], arSecondaryButtons = [], onButtonPress }: ActionButtonsProps) {
   const localizedVal = typeof PCore !== 'undefined' ? PCore.getLocaleUtils().getLocaleValue : undefined;
-
   const renderLabel = (name: string) => (localizedVal ? localizedVal(name, 'Assignment') : name);
-
   const cyaTargetPresent = useElementPresent(CYATARGET_SELECTOR);
 
-  const caseContent = usePegaSelector(s => s?.data?.['app/primary_1']?.caseInfo?.content?.pyViewName, undefined as any);
+  const pConnect = getPConnect();
+  const caseContent = pConnect.getCaseInfo().getCurrentAssignmentViewName();
+  const availableProcesses = pConnect.getCaseInfo().getAvailableProcesses?.() ?? [];
 
   const isSpecialCyaPage = caseContent === SPECIAL_PAGE_VALUE;
   const isTaskListView = caseContent === TASK_LIST_VIEW;
 
-  useEffect(() => {
-    updateViewHistory(caseContent);
-  }, [caseContent]);
+  const goToTaskListProcess = useMemo(() => availableProcesses?.find((p: any) => p.ID === 'GoToTaskList'), [availableProcesses]);
 
   const realPrevious = useMemo(() => arSecondaryButtons.find(b => isRealPreviousButton(b)), [arSecondaryButtons]);
-
   const primaryAdvance = useMemo(() => pickPrimaryAdvanceButton(arMainButtons), [arMainButtons]);
 
   const runRealPrevious = () => {
@@ -109,11 +85,9 @@ export default function ActionButtons({ arMainButtons = [], arSecondaryButtons =
     }
   };
 
-  const handleBackClick = () => {
+  const handleBackClick = async () => {
     const selectEl = document.querySelector(CYATARGET_SELECTOR) as HTMLSelectElement | null;
     const cyaValue = selectEl?.value;
-    const previousViewName = getPreviousViewName();
-    const cameFromTaskList = previousViewName === TASK_LIST_VIEW;
 
     // Dependent question case
     if (caseContent === 'SelectPhoneTypeMobileLandlineWorkOther' && cyaTargetPresent && cyaValue === 'Phone Number') {
@@ -121,9 +95,25 @@ export default function ActionButtons({ arMainButtons = [], arSecondaryButtons =
       return;
     }
 
-    // If this page was reached from the task list, go back normally
-    if (cameFromTaskList) {
-      runRealPrevious();
+    // If on EnterNameFirstMiddleLast stage without CYA, go back to task list
+    const shouldGoToTaskList = caseContent === 'EnterNameFirstMiddleLast';
+
+    if (shouldGoToTaskList && !cyaTargetPresent) {
+      if (!goToTaskListProcess?.ID) {
+        runRealPrevious();
+        return;
+      }
+
+      try {
+        const caseKey = pConnect.getCaseInfo().getKey();
+
+        await pConnect.getActionsApi().openProcessAction(goToTaskListProcess.ID, {
+          ...goToTaskListProcess,
+          caseID: caseKey
+        });
+      } catch {
+        runRealPrevious();
+      }
       return;
     }
 
@@ -153,9 +143,9 @@ export default function ActionButtons({ arMainButtons = [], arSecondaryButtons =
       <a
         href='#'
         className='govuk-back-link'
-        onClick={e => {
+        onClick={async e => {
           e.preventDefault();
-          handleBackClick();
+          await handleBackClick();
         }}
       >
         Back

@@ -8,6 +8,7 @@ import ActionButtons from './src/components/override-sdk/infra/ActionButtons/';
 import GdsTaskForceGdsHierarchicalFormTaskList from './src/components/custom-sdk/template/GDSTaskForce_GDS_HierarchicalFormTaskList/';
 import GdsTaskForceGdsTaskList from './src/components/custom-sdk/template/GDSTaskForce_GDS_TaskList/';
 import GdsTaskForceGdsCheckYourAnswers from './src/components/custom-sdk/template/GDSTaskForce_GDS_CheckYourAnswers/';
+import AssignmentCard from './src/components/override-sdk/infra/AssignmentCard/';
 /* import end - DO NOT REMOVE */
 
 // localSdkComponentMap is the JSON object where we'll store the components that are
@@ -21,7 +22,8 @@ const localSdkComponentMap = {
   ActionButtons: ActionButtons,
   GDSTaskForce_GDS_HierarchicalFormTaskList: GdsTaskForceGdsHierarchicalFormTaskList,
   GDSTaskForce_GDS_TaskList: GdsTaskForceGdsTaskList,
-  GDSTaskForce_GDS_CheckYourAnswers: GdsTaskForceGdsCheckYourAnswers
+  GDSTaskForce_GDS_CheckYourAnswers: GdsTaskForceGdsCheckYourAnswers,
+  AssignmentCard: AssignmentCard
   /* map end - DO NOT REMOVE */
 };
 
