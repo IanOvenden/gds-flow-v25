@@ -193,7 +193,7 @@ export const FlowContainer = (props: FlowContainerProps) => {
         {!bShowConfirm &&
           (!todo_showTodo ? (
             !displayOnlyFA ? (
-              <section className='psdk-root govuk-!-padding-4 govuk-!-margin-2 govuk-!-margin-top-8'>
+              <section>
                 <header id='assignment-header' className='govuk-!-margin-bottom-4'>
                   <div className='govuk-!-margin-bottom-2'>
                     <strong className='govuk-tag govuk-tag--blue psdk-avatar'>{operatorInitials}</strong>
@@ -212,7 +212,7 @@ export const FlowContainer = (props: FlowContainerProps) => {
                 </LocalizationProvider>
               </section>
             ) : (
-              <section className='psdk-root govuk-!-padding-4 govuk-!-margin-2 govuk-!-margin-top-8'>
+              <section>
                 <div ref={backButtonPortalRef} />
                 <h1 className='govuk-heading-l'>{localizedVal(containerName, undefined, key)}</h1>
                 {displayPageMessages()}
