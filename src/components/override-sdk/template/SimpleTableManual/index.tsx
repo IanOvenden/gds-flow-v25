@@ -270,7 +270,7 @@ export default function SimpleTableManual(props: SimpleTableManualProps) {
                   )}
                   {!readOnlyMode && !isDisplayModeEnabled && !hideDeleteRow && (
                     <li className='govuk-summary-card__action'>
-                      <button
+                      <a
                         type='button'
                         className='govuk-link'
                         onClick={() => deleteRecord(rowIndex)}
@@ -281,7 +281,7 @@ export default function SimpleTableManual(props: SimpleTableManualProps) {
                           {' '}
                           {cardTitle} {rowIndex + 1}
                         </span>
-                      </button>
+                      </a>
                     </li>
                   )}
                 </ul>
