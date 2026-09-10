@@ -258,16 +258,18 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
         // Extract available processes and actions from caseInfo
         const availableProcessesList = dataObject?.caseInfo?.availableProcesses || [];
         const availableActions = dataObject?.caseInfo?.availableActions || [];
+        const caseClass = dataObject?.caseInfo?.content?.pxObjClass || dataObject?.caseInfo?.content?.classID || '';
 
         debugLog('Available Processes:', availableProcessesList);
         debugLog('Available Actions:', availableActions);
+        debugLog('Case class for D_TaskList:', caseClass);
 
         // Try to get data from PCore DataPageUtils first
         if (window.PCore && window.PCore.getDataPageUtils) {
           const dataPageUtils = window.PCore.getDataPageUtils();
 
-          // Pass parameters object with CaseKey
-          const parameters: any = { CaseKey: caseID };
+          // D_TaskList requires both the case key and the case class from the case response.
+          const parameters: any = { CaseKey: caseID, CaseClass: caseClass };
           const dataPageData = await dataPageUtils.getDataAsync(dataPage, pConnect.getContextName(), parameters, undefined, undefined, {
             invalidateCache: true
           });
