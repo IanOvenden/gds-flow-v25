@@ -44,16 +44,17 @@ function useElementPresent(selector: string): boolean {
   return present;
 }
 
-function setSelectToCyaIfPresent(): void {
-  const selectEl = document.querySelector(CYATARGET_SELECTOR) as HTMLSelectElement | null;
-  if (!selectEl) return;
+function setInputToCyaIfPresent(): void {
+  const inputEl = document.querySelector(CYATARGET_SELECTOR) as HTMLInputElement | null;
+  if (!inputEl) return;
 
-  const hasCya = Array.from(selectEl.options).some(opt => opt.value === CYA_OPTION_VALUE);
-
-  if (hasCya && selectEl.value !== CYA_OPTION_VALUE) {
-    selectEl.value = CYA_OPTION_VALUE;
-    selectEl.dispatchEvent(new Event('input', { bubbles: true }));
-    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+  if (inputEl.value !== CYA_OPTION_VALUE) {
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+    if (nativeInputValueSetter) {
+      nativeInputValueSetter.call(inputEl, CYA_OPTION_VALUE);
+    }
+    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    inputEl.dispatchEvent(new Event('change', { bubbles: true }));
   }
 }
 
@@ -108,19 +109,35 @@ export default function ActionButtons({ getPConnect, arMainButtons = [], arSecon
   };
 
   const handleBackClick = async () => {
-    const selectEl = document.querySelector(CYATARGET_SELECTOR) as HTMLSelectElement | null;
-    const cyaValue = selectEl?.value;
+    const inputEl = document.querySelector(CYATARGET_SELECTOR) as HTMLInputElement | null;
+    const cyaValue = inputEl?.value;
 
-    // Dependent question case
-    if (caseContent === 'SelectPhoneTypeMobileLandlineWorkOther' && cyaTargetPresent && cyaValue === 'Phone Number') {
-      runRealPrevious();
-      return;
+    // Dependant question check - Check if CYA value is not in editable fields
+    if (cyaTargetPresent) {
+      const contextName = pConnect.getContextName();
+      const editableFields = PCore.getFormUtils().getEditableFields(contextName) ?? [];
+
+      const editableFieldNames = editableFields.map((field: any) => {
+        const name = field.name ?? '';
+        return name.startsWith('caseInfo.content.') ? name.replace('caseInfo.content.', '') : name;
+      });
+
+      // Check if CYA value matches exactly or matches before array notation (e.g., ComplainantAddresses matches ComplainantAddresses[0].Operation)
+      const cyaMatchesEditableField = editableFieldNames.some((fieldName: string) => {
+        const baseFieldName = fieldName.split('[')[0];
+        return fieldName === cyaValue || baseFieldName === cyaValue;
+      });
+
+      if (!cyaMatchesEditableField) {
+        runRealPrevious();
+        return;
+      }
     }
 
-    // If on EnterNameFirstMiddleLast stage without CYA, go back to task list
-    const shouldGoToTaskList = caseContent === 'EnterNameFirstMiddleLast';
+    // If navigateToStep action not found, no CYA target, and not on special pages, go back to task list
+    const shouldGoToTaskList = !realPrevious && !cyaTargetPresent && !isSpecialCyaPage && !isTaskListView;
 
-    if (shouldGoToTaskList && !cyaTargetPresent) {
+    if (shouldGoToTaskList) {
       if (!goToTaskListProcess?.ID) {
         runRealPrevious();
         return;
@@ -153,7 +170,7 @@ export default function ActionButtons({ getPConnect, arMainButtons = [], arSecon
 
     // Step → redirect to CYA
     if (cyaTargetPresent && !isSpecialCyaPage && !isTaskListView) {
-      setSelectToCyaIfPresent();
+      setInputToCyaIfPresent();
       runPrimaryAdvance();
     }
   };
