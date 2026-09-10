@@ -109,13 +109,29 @@ export default function ActionButtons({ getPConnect, arMainButtons = [], arSecon
   };
 
   const handleBackClick = async () => {
-    const selectEl = document.querySelector(CYATARGET_SELECTOR) as HTMLSelectElement | null;
-    const cyaValue = selectEl?.value;
+    const inputEl = document.querySelector(CYATARGET_SELECTOR) as HTMLInputElement | null;
+    const cyaValue = inputEl?.value;
 
-    // Dependent question case
-    if (caseContent === 'SelectPhoneTypeMobileLandlineWorkOther' && cyaTargetPresent && cyaValue === 'Phone Number') {
-      runRealPrevious();
-      return;
+    // Dependant question check - Check if CYA value is not in editable fields
+    if (cyaTargetPresent) {
+      const contextName = pConnect.getContextName();
+      const editableFields = PCore.getFormUtils().getEditableFields(contextName) ?? [];
+
+      const editableFieldNames = editableFields.map((field: any) => {
+        const name = field.name ?? '';
+        return name.startsWith('caseInfo.content.') ? name.replace('caseInfo.content.', '') : name;
+      });
+
+      // Check if CYA value matches exactly or matches before array notation (e.g., ComplainantAddresses matches ComplainantAddresses[0].Operation)
+      const cyaMatchesEditableField = editableFieldNames.some((fieldName: string) => {
+        const baseFieldName = fieldName.split('[')[0];
+        return fieldName === cyaValue || baseFieldName === cyaValue;
+      });
+
+      if (!cyaMatchesEditableField) {
+        runRealPrevious();
+        return;
+      }
     }
 
     // If navigateToStep action not found, no CYA target, and not on special pages, go back to task list
