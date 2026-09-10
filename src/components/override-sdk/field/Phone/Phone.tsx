@@ -14,7 +14,6 @@ export default function Phone(props: PhoneProps) {
   const {
     getPConnect,
     label,
-    required,
     disabled,
     value = '',
     validatemessage,
