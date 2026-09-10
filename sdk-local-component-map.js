@@ -11,6 +11,7 @@ import GdsTaskForceGdsCheckYourAnswers from './src/components/custom-sdk/templat
 import AssignmentCard from './src/components/override-sdk/infra/AssignmentCard/';
 import FlowContainer from './src/components/override-sdk/infra/FlowContainer/';
 import DefaultForm from './src/components/override-sdk/template/DefaultForm/';
+import SimpleTableManual from './src/components/override-sdk/template/SimpleTableManual/';
 import Phone from './src/components/override-sdk/field/Phone/';
 /* import end - DO NOT REMOVE */
 
@@ -29,6 +30,7 @@ const localSdkComponentMap = {
   AssignmentCard: AssignmentCard,
   FlowContainer: FlowContainer,
   DefaultForm: DefaultForm,
+  SimpleTableManual: SimpleTableManual,
   Phone: Phone
   /* map end - DO NOT REMOVE */
 };
