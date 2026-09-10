@@ -37,7 +37,6 @@ export default function SimpleTableManual(props: SimpleTableManualProps) {
     renderMode,
     label: labelProp,
     showLabel,
-    contextClass,
     hideAddRow,
     hideDeleteRow,
     propertyLabel,
@@ -59,10 +58,8 @@ export default function SimpleTableManual(props: SimpleTableManualProps) {
 
   const readOnlyMode = renderMode === 'ReadOnly';
   const isDisplayModeEnabled = displayMode === 'DISPLAY_ONLY';
-  const editableMode = renderMode === 'Editable';
   const allowEditingInModal =
     (editMode ? editMode === 'modal' : addAndEditRowsWithin === 'modal') && !(renderMode === 'ReadOnly' || isDisplayModeEnabled);
-  const showDeleteButton = editableMode && !hideDeleteRow;
   const showAddRowButton = !readOnlyMode && !hideAddRow && !isDisplayModeEnabled;
 
   const defaultView = editModeConfig ? editModeConfig.defaultView : viewForAddAndEditModal;
@@ -151,7 +148,7 @@ export default function SimpleTableManual(props: SimpleTableManualProps) {
   // Rebuild whenever the reference list changes
   useEffect(() => {
     buildElementsForTable();
-  }, [referenceList]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [referenceList]);
 
   // Hide the sibling MUI checkbox field ("Would you like to add an address?").
   // It is replaced functionally by the + Add button below.
@@ -160,7 +157,7 @@ export default function SimpleTableManual(props: SimpleTableManualProps) {
     if (!formColumn) return;
     // Target any direct-child MuiFormControl-root siblings (the checkbox wrapper)
     formColumn.querySelectorAll<HTMLElement>(':scope > .MuiFormControl-root').forEach(el => {
-      el.style.display = 'none'; // eslint-disable-line no-param-reassign
+      el.style.display = 'none';
     });
   }, []); // run once on mount
 
