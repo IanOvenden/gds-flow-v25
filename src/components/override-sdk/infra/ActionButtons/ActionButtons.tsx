@@ -186,7 +186,6 @@ export default function ActionButtons({ getPConnect, arMainButtons = [], arSecon
         .filter(b => !isRealPreviousButton(b) && !b.name?.toLowerCase().includes('cancel') && b.name?.toLowerCase().includes('later'))
         .map(btn => (
           <React.Fragment key={btn.name}>
-            <div style={{ flexBasis: '100%', height: 0 }} />
             <a
               href='#'
               className='govuk-link'
