@@ -8,9 +8,11 @@ import ActionButtons from './src/components/override-sdk/infra/ActionButtons/';
 import GdsTaskForceGdsHierarchicalFormTaskList from './src/components/custom-sdk/template/GDSTaskForce_GDS_HierarchicalFormTaskList/';
 import GdsTaskForceGdsTaskList from './src/components/custom-sdk/template/GDSTaskForce_GDS_TaskList/';
 import GdsTaskForceGdsCheckYourAnswers from './src/components/custom-sdk/template/GDSTaskForce_GDS_CheckYourAnswers/';
+import AssignmentCard from './src/components/override-sdk/infra/AssignmentCard/';
 import FlowContainer from './src/components/override-sdk/infra/FlowContainer/';
 import DefaultForm from './src/components/override-sdk/template/DefaultForm/';
 import SimpleTableManual from './src/components/override-sdk/template/SimpleTableManual/';
+import Phone from './src/components/override-sdk/field/Phone/';
 /* import end - DO NOT REMOVE */
 
 // localSdkComponentMap is the JSON object where we'll store the components that are
@@ -25,9 +27,11 @@ const localSdkComponentMap = {
   GDSTaskForce_GDS_HierarchicalFormTaskList: GdsTaskForceGdsHierarchicalFormTaskList,
   GDSTaskForce_GDS_TaskList: GdsTaskForceGdsTaskList,
   GDSTaskForce_GDS_CheckYourAnswers: GdsTaskForceGdsCheckYourAnswers,
+  AssignmentCard: AssignmentCard,
   FlowContainer: FlowContainer,
   DefaultForm: DefaultForm,
-  SimpleTableManual: SimpleTableManual
+  SimpleTableManual: SimpleTableManual,
+  Phone: Phone
   /* map end - DO NOT REMOVE */
 };
 

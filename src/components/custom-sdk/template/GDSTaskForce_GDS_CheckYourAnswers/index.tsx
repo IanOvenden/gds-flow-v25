@@ -22,14 +22,12 @@ type QAEntry = {
 };
 
 const QUESTION_TO_CYA_TARGET_VALUE: Record<string, string> = {
-  'Complainant First Name': 'Name',
-  'Complainant Middle Name': 'Name',
-  'Complainant Last Name': 'Name',
+  'Complainant Name': 'Name',
   'Complainant Addresses': 'Address',
-  'ActivePhone': 'Phone Number',
-  'Phone Number' : 'Phone Number',
-  'Phone Type' : 'Phone Type',
-  'When is the best time to call you on this number?' : 'Contact Window'
+  ActivePhone: 'Phone Number',
+  'Phone Number': 'Phone Number',
+  'Phone Type': 'Phone Type',
+  'When is the best time to call you on this number?': 'Contact Window'
 };
 
 const Child: React.ComponentType<any> = connectToState(mapStateToProps)((props: any) => {
@@ -95,24 +93,30 @@ function getAnswerFromKid(kid: any): string {
 
     const stateProps = pConn.getStateProps?.();
     const propRef = stateProps?.value as string | undefined;
+
     if (!propRef) return '';
 
     const pageRef = pConn.getPageReference?.();
-
     let answer: any = undefined;
 
     if (pConn.getValue) {
-      // Some builds support (propRef, pageRef), some only (propRef)
       answer = pConn.getValue(propRef, pageRef);
-      if (answer === undefined) answer = pConn.getValue(propRef);
+
+      if (answer === undefined) {
+        answer = pConn.getValue(propRef);
+      }
     }
 
-    // Extra fallbacks (sometimes present depending on component)
-    if (answer === undefined && kid?.value != null) answer = kid.value;
-    if (answer === undefined && kid?.displayValue != null) answer = kid.displayValue;
+    if (answer === undefined && kid?.value != null) {
+      answer = kid.value;
+    }
+    if (answer === undefined && kid?.displayValue != null) {
+      answer = kid.displayValue;
+    }
 
     return toDisplayString(answer);
-  } catch {
+  } catch (error) {
+    console.error('Error in getAnswerFromKid:', error);
     return '';
   }
 }
@@ -121,6 +125,7 @@ function getAnswerFromKid(kid: any): string {
  * Extract Q/A rows from children:
  * - Skip question === "CYA Target"
  * - If a kid has no propRef, skip it (likely layout/wrapper)
+ * - For addresses, expand into separate rows (Address 1, Address 2, etc.)
  */
 function extractQAFromChildren(arChildren: any[]): QAEntry[] {
   if (!Array.isArray(arChildren)) return [];
@@ -137,16 +142,71 @@ function extractQAFromChildren(arChildren: any[]): QAEntry[] {
     // Skip only CYA Target
     if (question === 'CYA Target') continue;
 
-    const answer = getAnswerFromKid(kid);
+    const config = pConn.getConfigProps?.();
+    const isAddress = config?.name?.includes('Address') || config?.authorContext?.includes('Address');
 
-    out.push({
-      key: pConn.getStateProps?.()?.value ?? question ?? Math.random().toString(16),
-      question,
-      answer: answer ?? '' // Always include row
-    });
+    if (isAddress) {
+      // Handle address array - create separate entries for each address
+      const authorContext = config?.authorContext;
+      const addressArray = pConn.getValue?.(authorContext);
+
+      if (Array.isArray(addressArray) && addressArray.length > 0) {
+        addressArray.forEach((address, idx) => {
+          const addressLabel = `Complainant Address ${idx + 1}`;
+          const addressParts = [address.AddressLine1, address.AddressLine2, address.City, address.Country, address.Postcode].filter(
+            val => val && val.trim()
+          );
+
+          // Format with commas between fields and newlines between lines
+          const formattedAddress = addressParts.join(',\n');
+
+          out.push({
+            key: `complainant-address-${idx}`,
+            question: addressLabel,
+            answer: formattedAddress
+          });
+        });
+      }
+    } else {
+      // Regular field
+      const answer = getAnswerFromKid(kid);
+      out.push({
+        key: pConn.getStateProps?.()?.value ?? question ?? Math.random().toString(16),
+        question,
+        answer: answer ?? ''
+      });
+    }
   }
 
   return out;
+}
+
+function consolidateComplainantName(qaEntries: QAEntry[]): QAEntry[] {
+  const nameFields = ['Complainant First Name', 'Complainant Middle Name', 'Complainant Last Name'];
+
+  const hasAnyNameField = qaEntries.some(entry => nameFields.includes(entry.question));
+
+  if (!hasAnyNameField) {
+    return qaEntries;
+  }
+
+  const filtered = qaEntries.filter(entry => !nameFields.includes(entry.question));
+  const nameParts = qaEntries
+    .filter(entry => nameFields.includes(entry.question))
+    .sort((a, b) => nameFields.indexOf(a.question) - nameFields.indexOf(b.question))
+    .map(entry => entry.answer)
+    .filter(answer => answer && answer.trim())
+    .join(' ');
+
+  if (nameParts) {
+    filtered.splice(0, 0, {
+      key: 'complainant-name',
+      question: 'Complainant Name',
+      answer: nameParts
+    });
+  }
+
+  return filtered;
 }
 
 function setCYATargetAndAdvance(targetValue: string) {
@@ -188,7 +248,7 @@ export default function GdsTaskForceGdsCheckYourAnswers(props: PropsWithChildren
   // Children are inside a region; render the region's children (not the region wrapper)
   const arChildren = getPConnect().getChildren()[0].getPConnect().getChildren();
 
-  const qaEntries = extractQAFromChildren(arChildren);
+  const qaEntries = consolidateComplainantName(extractQAFromChildren(arChildren));
 
   // Render only non-QA children “as normal”.
   // We also keep the CYATarget component itself rendered (it will be hidden/shown by your Dropdown logic).
@@ -198,9 +258,15 @@ export default function GdsTaskForceGdsCheckYourAnswers(props: PropsWithChildren
       if (!pConn) return true;
 
       const propRef = pConn.getStateProps?.()?.value as string | undefined;
+      const question = getQuestionLabel(pConn);
+
+      // Exclude address components (already displayed in CYA summary)
+      const config = pConn.getConfigProps?.();
+      const isAddress = config?.name?.includes('Address') || config?.authorContext?.includes('Address');
+      if (isAddress) return false;
+
       if (!propRef) return true; // layout/wrapper/other
 
-      const question = getQuestionLabel(pConn);
       if (!question) return true;
 
       // Keep CYATarget rendered (needed for navigation)
@@ -223,13 +289,22 @@ export default function GdsTaskForceGdsCheckYourAnswers(props: PropsWithChildren
         {/* GOV.UK Summary List */}
         <div className='govuk-summary-list govuk-!-margin-bottom-9'>
           {qaEntries.map(({ key, question, answer }) => {
-            const targetValue = QUESTION_TO_CYA_TARGET_VALUE[question] ?? question;
+            let targetValue = QUESTION_TO_CYA_TARGET_VALUE[question];
+
+            // Handle dynamic address questions (Complainant Address 1, 2, etc.)
+            if (!targetValue && question.startsWith('Complainant Address')) {
+              targetValue = 'Address';
+            }
+
+            targetValue = targetValue ?? question;
 
             return (
               <div className='govuk-summary-list__row' key={key}>
                 <dt className='govuk-summary-list__key'>{question}</dt>
 
-                <dd className='govuk-summary-list__value'>{answer && answer.trim() ? answer : '—'}</dd>
+                <dd className='govuk-summary-list__value' style={{ whiteSpace: 'pre-wrap' }}>
+                  {answer && answer.trim() ? answer : '—'}
+                </dd>
 
                 <dd className='govuk-summary-list__actions'>
                   <a

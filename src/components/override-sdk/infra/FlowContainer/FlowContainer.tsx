@@ -1,10 +1,11 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 
 import StoreContext from '@pega/react-sdk-components/lib/bridge/Context/StoreContext';
 import { Utils } from '@pega/react-sdk-components/lib/components/helpers/utils';
 import { isContainerInitialized } from '@pega/react-sdk-components/lib/components/infra/Containers/container-helpers';
 import { getComponentFromMap } from '@pega/react-sdk-components/lib/bridge/helpers/sdk_component_map';
 import { withSimpleViewContainerRenderer } from '@pega/react-sdk-components/lib/components/infra/Containers/SimpleView/SimpleView';
+import { BackButtonPortalContext } from './BackButtonPortalContext';
 
 import { addContainerItem, getToDoAssignments, showBanner, hasContainerItems } from './helpers';
 import type { PConnProps } from '@pega/react-sdk-components/lib/types/PConnProps';
@@ -31,6 +32,7 @@ export const FlowContainer = (props: FlowContainerProps) => {
   const Assignment = getComponentFromMap('Assignment');
   const ToDo = getComponentFromMap('Todo'); // NOTE: ConstellationJS Engine uses "Todo" and not "ToDo"!!!
   const AlertBanner = getComponentFromMap('AlertBanner');
+  const backButtonPortalRef = useRef<HTMLDivElement>(null);
 
   const pCoreConstants = PCore.getConstants();
   const { TODO } = pCoreConstants;
@@ -186,73 +188,77 @@ export const FlowContainer = (props: FlowContainerProps) => {
   };
 
   return (
-    <div id={buildName} className='psdk-flow-container-top govuk-main-wrapper govuk-!-text-align-left'>
-      {!bShowConfirm &&
-        (!todo_showTodo ? (
-          !displayOnlyFA ? (
-            <section className='psdk-root govuk-!-padding-4 govuk-!-margin-2 govuk-!-margin-top-8'>
-              <header id='assignment-header' className='govuk-!-margin-bottom-4'>
-                <div className='govuk-!-margin-bottom-2'>
-                  <strong className='govuk-tag govuk-tag--blue psdk-avatar'>{operatorInitials}</strong>
-                </div>
+    <BackButtonPortalContext.Provider value={backButtonPortalRef}>
+      <div id={buildName} className='psdk-flow-container-top govuk-main-wrapper govuk-!-text-align-left'>
+        {!bShowConfirm &&
+          (!todo_showTodo ? (
+            !displayOnlyFA ? (
+              <section>
+                <header id='assignment-header' className='govuk-!-margin-bottom-4'>
+                  <div className='govuk-!-margin-bottom-2'>
+                    <strong className='govuk-tag govuk-tag--blue psdk-avatar'>{operatorInitials}</strong>
+                  </div>
+                  <div ref={backButtonPortalRef} />
+                  <h1 className='govuk-heading-l'>{localizedVal(containerName, undefined, key)}</h1>
+                  <p className='govuk-body-s govuk-!-margin-bottom-0'>
+                    {localizedVal('In', 'Todo')} {caseId} \u2022 {localizedVal('Priority', 'Todo')} {urgency}
+                  </p>
+                </header>
+                {displayPageMessages()}
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Assignment getPConnect={getPConnect} itemKey={itemKey}>
+                    {rootViewElement}
+                  </Assignment>
+                </LocalizationProvider>
+              </section>
+            ) : (
+              <section>
+                <div ref={backButtonPortalRef} />
                 <h1 className='govuk-heading-l'>{localizedVal(containerName, undefined, key)}</h1>
-                <p className='govuk-body-s govuk-!-margin-bottom-0'>
-                  {localizedVal('In', 'Todo')} {caseId} \u2022 {localizedVal('Priority', 'Todo')} {urgency}
-                </p>
-              </header>
-              {displayPageMessages()}
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <Assignment getPConnect={getPConnect} itemKey={itemKey}>
-                  {rootViewElement}
-                </Assignment>
-              </LocalizationProvider>
-            </section>
+                {displayPageMessages()}
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Assignment getPConnect={getPConnect} itemKey={itemKey}>
+                    {rootViewElement}
+                  </Assignment>
+                </LocalizationProvider>
+              </section>
+            )
           ) : (
-            <section className='psdk-root govuk-!-padding-4 govuk-!-margin-2 govuk-!-margin-top-8'>
-              <h1 className='govuk-heading-l'>{localizedVal(containerName, undefined, key)}</h1>
-              {displayPageMessages()}
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <Assignment getPConnect={getPConnect} itemKey={itemKey}>
-                  {rootViewElement}
-                </Assignment>
-              </LocalizationProvider>
-            </section>
-          )
-        ) : (
-          <div>
-            <ToDo
-              key={Math.random()}
-              getPConnect={getPConnect}
-              caseInfoID={todo_caseInfoID}
-              datasource={todo_datasource}
-              showTodoList={todo_showTodoList}
-              headerText={todo_headerText}
-              type={TODO}
-              context={todo_context}
-              itemKey={itemKey}
-              isConfirm
-            />
+            <div>
+              <ToDo
+                key={Math.random()}
+                getPConnect={getPConnect}
+                caseInfoID={todo_caseInfoID}
+                datasource={todo_datasource}
+                showTodoList={todo_showTodoList}
+                headerText={todo_headerText}
+                type={TODO}
+                context={todo_context}
+                itemKey={itemKey}
+                isConfirm
+              />
+            </div>
+          ))}
+        {bHasCaseMessages && (
+          <div
+            className='govuk-notification-banner govuk-notification-banner--success psdk-alert govuk-!-margin-left-2 govuk-!-margin-right-2'
+            role='alert'
+            aria-labelledby='flow-container-success-title'
+            data-module='govuk-notification-banner'
+          >
+            <div className='govuk-notification-banner__header'>
+              <h2 className='govuk-notification-banner__title' id='flow-container-success-title'>
+                {localizedVal('Success', 'Messages')}
+              </h2>
+            </div>
+            <div className='govuk-notification-banner__content'>
+              <p className='govuk-notification-banner__heading'>{caseMessages}</p>
+            </div>
           </div>
-        ))}
-      {bHasCaseMessages && (
-        <div
-          className='govuk-notification-banner govuk-notification-banner--success psdk-alert govuk-!-margin-left-2 govuk-!-margin-right-2'
-          role='alert'
-          aria-labelledby='flow-container-success-title'
-          data-module='govuk-notification-banner'
-        >
-          <div className='govuk-notification-banner__header'>
-            <h2 className='govuk-notification-banner__title' id='flow-container-success-title'>
-              {localizedVal('Success', 'Messages')}
-            </h2>
-          </div>
-          <div className='govuk-notification-banner__content'>
-            <p className='govuk-notification-banner__heading'>{caseMessages}</p>
-          </div>
-        </div>
-      )}
-      {bShowConfirm && bShowBanner && <div>{rootViewElement}</div>}
-    </div>
+        )}
+        {bShowConfirm && bShowBanner && <div>{rootViewElement}</div>}
+      </div>
+    </BackButtonPortalContext.Provider>
   );
 };
 

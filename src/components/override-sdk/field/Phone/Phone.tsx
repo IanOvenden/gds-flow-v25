@@ -1,20 +1,21 @@
-import { useState, useEffect, type ChangeEvent, type FocusEvent } from "react";
+import { useEffect, useState } from 'react';
 
-import handleEvent from "@pega/react-sdk-components/lib/components/helpers/event-utils";
-import { getComponentFromMap } from "@pega/react-sdk-components/lib/bridge/helpers/sdk_component_map";
-import type { PConnFieldProps } from "@pega/react-sdk-components/lib/types/PConnProps";
+import { getComponentFromMap } from '@pega/react-sdk-components/lib/bridge/helpers/sdk_component_map';
+import type { PConnFieldProps } from '@pega/react-sdk-components/lib/types/PConnProps';
+import handleEvent from '@pega/react-sdk-components/lib/components/helpers/event-utils';
 
 interface PhoneProps extends PConnFieldProps {
   // If any, enter additional props that only exist on Phone here
 }
 
 export default function Phone(props: PhoneProps) {
+  const FieldValueList = getComponentFromMap('FieldValueList');
+
   const {
     getPConnect,
     label,
-    required,
     disabled,
-    value = "",
+    value = '',
     validatemessage,
     status,
     readOnly,
@@ -22,7 +23,7 @@ export default function Phone(props: PhoneProps) {
     helperText,
     displayMode,
     hideLabel,
-    placeholder,
+    placeholder
   } = props;
 
   const pConn = getPConnect();
@@ -30,92 +31,69 @@ export default function Phone(props: PhoneProps) {
   const propName = (pConn.getStateProps() as any).value;
 
   const [inputValue, setInputValue] = useState(value);
+  useEffect(() => setInputValue(value), [value]);
 
-  useEffect(() => {
-    setInputValue(value);
-  }, [value]);
-
-  if (displayMode === "DISPLAY_ONLY") {
-    const FieldValueList = getComponentFromMap("FieldValueList");
-    return <FieldValueList name={hideLabel ? "" : label} value={value} />;
+  if (displayMode === 'DISPLAY_ONLY') {
+    return <FieldValueList name={hideLabel ? '' : label} value={value} />;
   }
 
-  if (displayMode === "STACKED_LARGE_VAL") {
-    const FieldValueList = getComponentFromMap("FieldValueList");
+  if (displayMode === 'STACKED_LARGE_VAL') {
+    return <FieldValueList name={hideLabel ? '' : label} value={value} variant='stacked' />;
+  }
+
+  const fieldId = (testId || propName || 'phone-number').replace(/[^a-zA-Z0-9_-]/g, '');
+  const hintId = `${fieldId}-hint`;
+  const errorId = `${fieldId}-error`;
+  const hasError = status === 'error' && !!validatemessage;
+  const describedBy = [helperText && hintId, hasError && errorId].filter(Boolean).join(' ') || undefined;
+
+  if (readOnly) {
     return (
-      <FieldValueList
-        name={hideLabel ? "" : label}
-        value={value}
-        variant="stacked"
-      />
+      <div className='govuk-form-group'>
+        <span className='govuk-label'>{hideLabel ? '' : label}</span>
+        <p className='govuk-body' data-test-id={testId}>
+          {value}
+        </p>
+      </div>
     );
   }
 
-  function handleChange(event: ChangeEvent<HTMLInputElement>) {
-    setInputValue(event.target.value);
-  }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
 
-  function handleBlur(event: FocusEvent<HTMLInputElement>) {
-    const phoneValue = event?.target?.value ?? "";
-    let phoneNumber = phoneValue.split(" ").slice(1).join();
-    phoneNumber = phoneNumber
-      ? `+${phoneValue && phoneValue.replace(/\D+/g, "")}`
-      : "";
-    handleEvent(actions, "changeNblur", propName, phoneNumber);
-  }
-
-  const hasError = status === "error";
-  const inputId = testId ?? propName ?? "phone-input";
-  const hintId = `${inputId}-hint`;
-  const errorId = `${inputId}-error`;
-
-  const describedByIds = [
-    helperText && hintId,
-    hasError && validatemessage && errorId,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const formGroupClass = `govuk-form-group${hasError ? " govuk-form-group--error" : ""}`;
-  const inputClass = `govuk-input govuk-input--width-20${hasError ? " govuk-input--error" : ""}`;
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    handleEvent(actions, 'changeNblur', propName, e.target.value);
+  };
 
   return (
-    <div className={formGroupClass}>
-      {!hideLabel && (
-        <h1 className="govuk-label-wrapper">
-          <label className="govuk-label govuk-label--l" htmlFor={inputId}>
-            {label}
-          </label>
-        </h1>
-      )}
+    <div className={`govuk-form-group${hasError ? ' govuk-form-group--error' : ''}`}>
+      <label className={`govuk-label${hideLabel ? ' govuk-visually-hidden' : ''}`} htmlFor={fieldId}>
+        {label}
+      </label>
       {helperText && (
-        <div className="govuk-hint" id={hintId}>
+        <div id={hintId} className='govuk-hint'>
           {helperText}
         </div>
       )}
-      {hasError && validatemessage && (
-        <p className="govuk-error-message" id={errorId}>
-          <span className="govuk-visually-hidden">Error:</span>{" "}
-          {validatemessage}
+      {hasError && (
+        <p id={errorId} className='govuk-error-message'>
+          <span className='govuk-visually-hidden'>Error:</span> {validatemessage}
         </p>
       )}
       <input
-        className={inputClass}
-        id={inputId}
-        name={propName}
-        type="tel"
-        inputMode="tel"
-        autoComplete="tel"
-        spellCheck={false}
+        className={`govuk-input govuk-input--width-20${hasError ? ' govuk-input--error' : ''}`}
+        id={fieldId}
+        name={fieldId}
+        type='tel'
+        autoComplete='tel'
         value={inputValue}
-        placeholder={placeholder ?? ""}
-        required={required}
+        onChange={handleChange}
+        onBlur={handleBlur}
         disabled={disabled}
-        readOnly={readOnly}
-        aria-describedby={describedByIds || undefined}
+        placeholder={placeholder ?? undefined}
         data-test-id={testId}
-        onChange={readOnly ? undefined : handleChange}
-        onBlur={!readOnly ? handleBlur : undefined}
+        aria-describedby={describedBy}
       />
     </div>
   );

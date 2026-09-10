@@ -33,7 +33,28 @@ export default function TextInput(props: TextInputProps) {
   };
 
   if (readOnly) {
-    console.log(readOnly);
+    return (
+      <div className={`govuk-form-group${hasError ? ' govuk-form-group--error' : ''}`}>
+        {label && (
+          <label className={`govuk-label${hideLabel ? ' govuk-visually-hidden' : ''}`} htmlFor={refName}>
+            {label}
+          </label>
+        )}
+        {helperText && (
+          <div id={hintId} className='govuk-hint'>
+            {helperText}
+          </div>
+        )}
+        {hasError && (
+          <p id={errorId} className='govuk-error-message'>
+            <span className='govuk-visually-hidden'>Error:</span> {validatemessage}
+          </p>
+        )}
+        <p className='govuk-body' id={refName} data-test-id={testId}>
+          {inputValue}
+        </p>
+      </div>
+    );
   }
 
   if (displayMode === 'DISPLAY_ONLY') {
@@ -42,9 +63,11 @@ export default function TextInput(props: TextInputProps) {
 
   return (
     <div className={`govuk-form-group${hasError ? ' govuk-form-group--error' : ''}`}>
-      <label className={`govuk-label${hideLabel ? ' govuk-visually-hidden' : ''}`} htmlFor={refName}>
-        {label}
-      </label>
+      {label && (
+        <label className={`govuk-label${hideLabel ? ' govuk-visually-hidden' : ''}`} htmlFor={refName}>
+          {label}
+        </label>
+      )}
 
       {helperText && (
         <div id={hintId} className='govuk-hint'>

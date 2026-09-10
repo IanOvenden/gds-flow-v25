@@ -28,6 +28,5 @@
 }
 
 .govuk-back-link {
-  position: absolute !important;
-  top: 175px !important;
+  margin: 0 0 30px !important;
 }
