@@ -19,15 +19,7 @@ type QAEntry = {
   key: string;
   question: string;
   answer: string;
-};
-
-const QUESTION_TO_CYA_TARGET_VALUE: Record<string, string> = {
-  'Complainant Name': 'Name',
-  'Complainant Addresses': 'Address',
-  ActivePhone: 'Phone Number',
-  'Phone Number': 'Phone Number',
-  'Phone Type': 'Phone Type',
-  'When is the best time to call you on this number?': 'Contact Window'
+  propRef?: string;
 };
 
 const Child: React.ComponentType<any> = connectToState(mapStateToProps)((props: any) => {
@@ -148,6 +140,8 @@ function extractQAFromChildren(arChildren: any[]): QAEntry[] {
     if (isAddress) {
       // Handle address array - create separate entries for each address
       const authorContext = config?.authorContext;
+      const rawPropRef = config?.authorContext as string | undefined;
+      const propRef = rawPropRef?.startsWith('.') ? rawPropRef.slice(1) : rawPropRef;
       const addressArray = pConn.getValue?.(authorContext);
 
       if (Array.isArray(addressArray) && addressArray.length > 0) {
@@ -163,17 +157,21 @@ function extractQAFromChildren(arChildren: any[]): QAEntry[] {
           out.push({
             key: `complainant-address-${idx}`,
             question: addressLabel,
-            answer: formattedAddress
+            answer: formattedAddress,
+            propRef
           });
         });
       }
     } else {
       // Regular field
       const answer = getAnswerFromKid(kid);
+      const rawPropRef = pConn.getStateProps?.()?.value as string | undefined;
+      const propRef = rawPropRef?.startsWith('.') ? rawPropRef.slice(1) : rawPropRef;
       out.push({
-        key: pConn.getStateProps?.()?.value ?? question ?? Math.random().toString(16),
+        key: propRef ?? question ?? Math.random().toString(16),
         question,
-        answer: answer ?? ''
+        answer: answer ?? '',
+        propRef
       });
     }
   }
@@ -199,10 +197,12 @@ function consolidateComplainantName(qaEntries: QAEntry[]): QAEntry[] {
     .join(' ');
 
   if (nameParts) {
+    const firstNamePropRef = qaEntries.find(entry => entry.question === 'Complainant First Name')?.propRef;
     filtered.splice(0, 0, {
       key: 'complainant-name',
       question: 'Complainant Name',
-      answer: nameParts
+      answer: nameParts,
+      propRef: firstNamePropRef
     });
   }
 
@@ -210,12 +210,15 @@ function consolidateComplainantName(qaEntries: QAEntry[]): QAEntry[] {
 }
 
 function setCYATargetAndAdvance(targetValue: string) {
-  const selectEl = document.querySelector('#CYATarget') as HTMLSelectElement | null;
+  const CYA_Target_Element = document.querySelector('#CYATarget') as HTMLSelectElement | null;
 
-  if (selectEl) {
-    selectEl.value = targetValue;
-    selectEl.dispatchEvent(new Event('input', { bubbles: true }));
-    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+  if (CYA_Target_Element) {
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+    if (nativeInputValueSetter) {
+      nativeInputValueSetter.call(CYA_Target_Element, targetValue);
+    }
+    CYA_Target_Element.dispatchEvent(new Event('input', { bubbles: true }));
+    CYA_Target_Element.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   // Trigger primary action (Continue/Next)
@@ -288,16 +291,7 @@ export default function GdsTaskForceGdsCheckYourAnswers(props: PropsWithChildren
 
         {/* GOV.UK Summary List */}
         <div className='govuk-summary-list govuk-!-margin-bottom-9'>
-          {qaEntries.map(({ key, question, answer }) => {
-            let targetValue = QUESTION_TO_CYA_TARGET_VALUE[question];
-
-            // Handle dynamic address questions (Complainant Address 1, 2, etc.)
-            if (!targetValue && question.startsWith('Complainant Address')) {
-              targetValue = 'Address';
-            }
-
-            targetValue = targetValue ?? question;
-
+          {qaEntries.map(({ key, question, answer, propRef }) => {
             return (
               <div className='govuk-summary-list__row' key={key}>
                 <dt className='govuk-summary-list__key'>{question}</dt>
@@ -312,7 +306,9 @@ export default function GdsTaskForceGdsCheckYourAnswers(props: PropsWithChildren
                     className='govuk-link'
                     onClick={e => {
                       e.preventDefault();
-                      setCYATargetAndAdvance(targetValue);
+                      if (propRef) {
+                        setCYATargetAndAdvance(propRef);
+                      }
                     }}
                   >
                     Change
