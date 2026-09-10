@@ -291,6 +291,10 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
               // Use the action href if available, otherwise fall back to task URL
               const taskHref = matchedProcess?.links?.add?.href || item.URL || item.pyURL || `#${taskID}`;
 
+              console.log('Task list item mapped to local action:', {
+                task: { id: taskID, name: taskName },
+                action: matchedProcess
+              });
               debugLog(`Mapping task "${taskName}" (${taskID}) to process:`, matchedProcess?.ID || 'none');
 
               return {
@@ -324,6 +328,10 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
               // Use the action href if available, otherwise fall back to task URL
               const taskHref = matchedProcess?.links?.add?.href || item.URL || item.pyURL || `#${taskID}`;
 
+              console.log('Task list item mapped to local action:', {
+                task: { id: taskID, name: taskName },
+                action: matchedProcess
+              });
               return {
                 id: taskID,
                 name: taskName,

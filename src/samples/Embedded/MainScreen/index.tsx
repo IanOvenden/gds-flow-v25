@@ -44,7 +44,7 @@ export default function MainScreen() {
   };
 
   const createComplaintCase = async () => {
-    PCore.getMashupApi().createCase('OBMN01-GDSComp-Work-ComplaintCapture', PCore.getConstants().APP.APP, {});
+    PCore.getMashupApi().createCase('OBMN01-PoultryM-Work-ApplicationIntake', PCore.getConstants().APP.APP, {});
     setShowLandingPage(false);
     setShowPega(true);
   };
