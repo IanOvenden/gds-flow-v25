@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useContext } from 'react';
+import { createPortal } from 'react-dom';
+import { BackButtonPortalContext } from '../FlowContainer/BackButtonPortalContext';
 
 interface ActionButton {
   name: string;
@@ -54,6 +56,26 @@ function setSelectToCyaIfPresent(): void {
     selectEl.dispatchEvent(new Event('change', { bubbles: true }));
   }
 }
+
+const BackButton = ({ handleBackClick }: { handleBackClick: () => Promise<void> }) => {
+  const portalTargetRef = useContext(BackButtonPortalContext);
+  const portalTarget = portalTargetRef?.current;
+  if (!portalTarget) return null;
+
+  return createPortal(
+    <a
+      href='#'
+      className='govuk-back-link'
+      onClick={async e => {
+        e.preventDefault();
+        await handleBackClick();
+      }}
+    >
+      Back
+    </a>,
+    portalTarget
+  );
+};
 
 export default function ActionButtons({ getPConnect, arMainButtons = [], arSecondaryButtons = [], onButtonPress }: ActionButtonsProps) {
   const localizedVal = typeof PCore !== 'undefined' ? PCore.getLocaleUtils().getLocaleValue : undefined;
@@ -140,16 +162,7 @@ export default function ActionButtons({ getPConnect, arMainButtons = [], arSecon
 
   return (
     <div className='govuk-button-group'>
-      <a
-        href='#'
-        className='govuk-back-link'
-        onClick={async e => {
-          e.preventDefault();
-          await handleBackClick();
-        }}
-      >
-        Back
-      </a>
+      <BackButton handleBackClick={handleBackClick} />
 
       {arMainButtons
         .filter(btn => !(isTaskListView && btn.name?.toLowerCase() === 'continue'))
