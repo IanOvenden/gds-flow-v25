@@ -84,7 +84,6 @@ export default function Date(props: DateProps) {
       {label && (
         <label className={`govuk-label${hideLabel ? ' govuk-visually-hidden' : ''}`} htmlFor={fieldId}>
           {label}
-          {required && <span className='govuk-required'> *</span>}
         </label>
       )}
 
