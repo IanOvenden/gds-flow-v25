@@ -1,0 +1,89 @@
+/* GOV.UK Form Group and Label */
+.govuk-form-group {
+  margin-bottom: 20px;
+}
+
+.govuk-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0b0c0c;
+}
+
+.govuk-label--required {
+  color: #d4351c;
+}
+
+.govuk-required {
+  color: #d4351c;
+}
+
+.govuk-hint {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #626a6e;
+}
+
+.govuk-error-message {
+  margin-bottom: 10px;
+  color: #d4351c;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.govuk-form-group--error {
+  /* Error state styling */
+}
+
+/* GDS Date Input Styling */
+.gds-date-input .MuiOutlinedInput-root {
+  font-size: 16px;
+  border-radius: 0;
+}
+
+.gds-date-input .MuiOutlinedInput-root input {
+  padding: 10px 12px;
+  font-size: 16px;
+}
+
+.gds-date-input .MuiOutlinedInput-notchedOutline {
+  border-color: #0b0c0c;
+  border-width: 2px;
+}
+
+.gds-date-input .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #0b0c0c;
+}
+
+.gds-date-input .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #0b0c0c;
+  border-width: 2px;
+}
+
+.gds-date-input--error .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+  border-color: #d4351c;
+  border-width: 2px;
+}
+
+.gds-date-input--error .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #d4351c;
+}
+
+/* GDS Date Picker Popup Styling */
+.gds-date-picker-popper .MuiPickersPopper-root {
+  /* Custom popup styling */
+}
+
+.gds-date-picker-popper .MuiDayCalendar-header {
+  border: none;
+}
+
+.gds-date-picker-popper button {
+  border-radius: 0;
+}
+
+.gds-date-picker-popper button:hover:not(.Mui-disabled) {
+  background-color: #f3f2f1;
+}

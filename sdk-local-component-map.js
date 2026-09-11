@@ -13,6 +13,8 @@ import FlowContainer from './src/components/override-sdk/infra/FlowContainer/';
 import DefaultForm from './src/components/override-sdk/template/DefaultForm/';
 import SimpleTableManual from './src/components/override-sdk/template/SimpleTableManual/';
 import Phone from './src/components/override-sdk/field/Phone/';
+import Date from './src/components/override-sdk/field/Date/';
+import Email from './src/components/override-sdk/field/Email/';
 /* import end - DO NOT REMOVE */
 
 // localSdkComponentMap is the JSON object where we'll store the components that are
@@ -31,7 +33,9 @@ const localSdkComponentMap = {
   FlowContainer: FlowContainer,
   DefaultForm: DefaultForm,
   SimpleTableManual: SimpleTableManual,
-  Phone: Phone
+  Phone: Phone,
+  Date: Date,
+  Email: Email
   /* map end - DO NOT REMOVE */
 };
 

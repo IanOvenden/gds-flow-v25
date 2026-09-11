@@ -135,27 +135,35 @@ function extractQAFromChildren(arChildren: any[]): QAEntry[] {
     if (question === 'CYA Target') continue;
 
     const config = pConn.getConfigProps?.();
-    const isAddress = config?.name?.includes('Address') || config?.authorContext?.includes('Address');
+    const isAddress = config?.name?.includes('Address') || config?.authorContext?.includes('Address') || config?.context?.includes('Address');
 
     if (isAddress) {
       // Handle address array - create separate entries for each address
-      const authorContext = config?.authorContext;
-      const rawPropRef = config?.authorContext as string | undefined;
+      const contextPath = config?.authorContext || config?.context;
+      const rawPropRef = contextPath as string | undefined;
       const propRef = rawPropRef?.startsWith('.') ? rawPropRef.slice(1) : rawPropRef;
-      const addressArray = pConn.getValue?.(authorContext);
+      const addressData = pConn.getValue?.(contextPath);
+      const addressesToProcess = Array.isArray(addressData) ? addressData : addressData ? [addressData] : [];
 
-      if (Array.isArray(addressArray) && addressArray.length > 0) {
-        addressArray.forEach((address, idx) => {
-          const addressLabel = `Complainant Address ${idx + 1}`;
-          const addressParts = [address.AddressLine1, address.AddressLine2, address.City, address.Country, address.Postcode].filter(
-            val => val && val.trim()
-          );
+      if (addressesToProcess.length > 0) {
+        addressesToProcess.forEach((address, idx) => {
+          const addressLabel = addressesToProcess.length > 1 ? `${question} ${idx + 1}` : question;
+          const addressParts = Object.entries(address)
+            .filter(([key]) => key !== 'classID')
+            .map(([, value]) => value)
+            .filter(val => val && val.toString().trim());
 
           // Format with commas between fields and newlines between lines
           const formattedAddress = addressParts.join(',\n');
 
           out.push({
-            key: `complainant-address-${idx}`,
+            key: propRef
+              ? addressesToProcess.length > 1
+                ? `${propRef}-${idx}`
+                : propRef
+              : addressesToProcess.length > 1
+                ? `address-${idx}`
+                : 'address',
             question: addressLabel,
             answer: formattedAddress,
             propRef
@@ -265,7 +273,7 @@ export default function GdsTaskForceGdsCheckYourAnswers(props: PropsWithChildren
 
       // Exclude address components (already displayed in CYA summary)
       const config = pConn.getConfigProps?.();
-      const isAddress = config?.name?.includes('Address') || config?.authorContext?.includes('Address');
+      const isAddress = config?.name?.includes('Address') || config?.authorContext?.includes('Address') || config?.context?.includes('Address');
       if (isAddress) return false;
 
       if (!propRef) return true; // layout/wrapper/other
