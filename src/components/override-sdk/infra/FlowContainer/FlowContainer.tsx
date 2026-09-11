@@ -21,6 +21,12 @@ interface FlowContainerProps extends PConnProps {
   activeContainerItemID: string;
 }
 
+interface PromotedField {
+  itemKey: string;
+  label: string;
+  id: string;
+}
+
 const getFieldLabel = (pConnect: any, visited = new Set<any>()): string => {
   if (!pConnect || visited.has(pConnect)) return '';
   visited.add(pConnect);
@@ -73,6 +79,7 @@ export const FlowContainer = (props: FlowContainerProps) => {
   const backButtonPortalRef = useRef<HTMLDivElement>(null);
   const flowContainerRef = useRef<HTMLDivElement>(null);
   const promotedFieldIdRef = useRef('');
+  const promotedFieldLabelRef = useRef('');
 
   const pCoreConstants = PCore.getConstants();
   const { TODO } = pCoreConstants;
@@ -102,10 +109,11 @@ export const FlowContainer = (props: FlowContainerProps) => {
   const [todo_caseInfoID, setCaseInfoID] = useState('');
   const [todo_showTodoList, setShowTodoList] = useState(false);
   const [todo_datasource, setTodoDatasource] = useState({});
-  const [renderedFieldLabel, setRenderedFieldLabel] = useState('');
-  const [renderedFieldId, setRenderedFieldId] = useState('');
+  const [promotedField, setPromotedField] = useState<PromotedField>({ itemKey: '', label: '', id: '' });
 
-  const fieldLabel = renderedFieldLabel || getFieldLabel(thePConn) || getRenderedFieldLabel(rootViewElement);
+  const activePromotedField = promotedField.itemKey === itemKey ? promotedField : undefined;
+  const fieldLabel = activePromotedField?.label || getFieldLabel(thePConn) || getRenderedFieldLabel(rootViewElement);
+  const renderedFieldId = activePromotedField?.id || '';
   const pageHeading = fieldLabel || containerName;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [todo_context, setTodoContext] = useState('');
@@ -160,9 +168,9 @@ export const FlowContainer = (props: FlowContainerProps) => {
   useEffect(() => {
     const container = flowContainerRef.current;
     if (!container) return;
-    setRenderedFieldLabel('');
-    setRenderedFieldId('');
+    setPromotedField({ itemKey, label: '', id: '' });
     promotedFieldIdRef.current = '';
+    promotedFieldLabelRef.current = '';
     let updateTimer: number | undefined;
 
     const updateFieldLabel = () => {
@@ -171,8 +179,15 @@ export const FlowContainer = (props: FlowContainerProps) => {
       );
       const fieldControls = container.querySelectorAll('input, select, textarea');
 
-      if (fieldControls.length === 1 && promotedFieldIdRef.current && fieldLabelElements.length === 1) {
-        fieldLabelElements[0].remove();
+      const soleFieldLabel = fieldLabelElements.length === 1 ? fieldLabelElements[0] : undefined;
+      const soleFieldLabelText = soleFieldLabel?.textContent?.trim() || '';
+      const isPromotedLabelRerender =
+        soleFieldLabel instanceof HTMLLabelElement &&
+        soleFieldLabel.htmlFor === promotedFieldIdRef.current &&
+        soleFieldLabelText === promotedFieldLabelRef.current;
+
+      if (fieldControls.length === 1 && isPromotedLabelRerender) {
+        soleFieldLabel.remove();
         return;
       }
 
@@ -183,20 +198,22 @@ export const FlowContainer = (props: FlowContainerProps) => {
       if (fieldLabelElements.length !== 1 || fieldControls.length !== 1) {
         fieldLabelElements.forEach(element => element.removeAttribute('hidden'));
         promotedFieldIdRef.current = '';
-        setRenderedFieldLabel('');
-        setRenderedFieldId('');
+        promotedFieldLabelRef.current = '';
+        setPromotedField({ itemKey, label: '', id: '' });
         return;
       }
 
-      const fieldLabelElement = fieldLabelElements[0];
-      const fieldLabel = fieldLabelElement?.textContent?.trim() || '';
+      const fieldLabelElement = soleFieldLabel;
+      const fieldLabel = soleFieldLabelText;
 
-      if (fieldLabel) {
-        setRenderedFieldLabel(fieldLabel);
+      if (fieldLabel && fieldLabelElement) {
+        let fieldId = '';
         if (fieldLabelElement instanceof HTMLLabelElement) {
-          promotedFieldIdRef.current = fieldLabelElement.htmlFor;
-          setRenderedFieldId(fieldLabelElement.htmlFor);
+          fieldId = fieldLabelElement.htmlFor;
+          promotedFieldIdRef.current = fieldId;
         }
+        promotedFieldLabelRef.current = fieldLabel;
+        setPromotedField({ itemKey, label: fieldLabel, id: fieldId });
         fieldLabelElement.setAttribute('hidden', '');
       }
     };
