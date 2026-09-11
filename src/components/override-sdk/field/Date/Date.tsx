@@ -24,7 +24,7 @@ export default function Date(props: DateProps) {
   const TextInput = getComponentFromMap('TextInput');
   const FieldValueList = getComponentFromMap('FieldValueList');
 
-  const { getPConnect, label, required, disabled, value, validatemessage, status, readOnly, testId, helperText, displayMode, hideLabel } = props;
+  const { getPConnect, label, disabled, value, validatemessage, status, readOnly, testId, helperText, displayMode, hideLabel } = props;
 
   const [dateValue, setDateValue] = useState<Dayjs | null>(value ? dayjs(value) : null);
 
