@@ -9,6 +9,7 @@
     "../src/components/override-sdk/**/**/*.tsx",
     "../src/components/override-sdk/**/**/*.js",
     "../src/components/override-sdk/**/**/*.jsx",
+    "../src/utils/**/*.ts",
     ".stroybook"
   ],
   "exclude": [
