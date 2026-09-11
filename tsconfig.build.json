@@ -1,6 +1,16 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["./src/components/**/*.ts", "./src/components/**/*.tsx", "./src/components/**/*.js", "./src/components/**/*.jsx"],
+  "include": [
+    "./src/components/**/*.ts",
+    "./src/components/**/*.tsx",
+    "./src/components/**/*.js",
+    "./src/components/**/*.jsx",
+    "./src/components/override-sdk/**/*.ts",
+    "./src/components/override-sdk/**/*.tsx",
+    "./src/components/override-sdk/**/*.js",
+    "./src/components/override-sdk/**/*.jsx",
+    "./src/utils/**/*.ts"
+  ],
   "exclude": [
     "./src/**/*.stories.ts",
     "./src/**/*.stories.tsx",

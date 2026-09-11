@@ -226,15 +226,17 @@ function GdsTaskForceGdsTaskList(props: GdsTaskForceGdsTaskListProps) {
         // Extract available processes and actions from caseInfo
         const availableProcessesList = dataObject?.caseInfo?.availableProcesses || [];
         const availableActions = dataObject?.caseInfo?.availableActions || [];
+        const caseClass = dataObject?.caseInfo?.content?.pxObjClass || dataObject?.caseInfo?.content?.classID || '';
 
         console.log('Available Processes (Constellation):', availableProcessesList);
         console.log('Available Actions (Constellation):', availableActions);
+        console.log('Case class for D_TaskList (Constellation):', caseClass);
 
         // Try async fetch first if available
         if (window.PCore && window.PCore.getDataPageUtils && caseID) {
           try {
             const dataPageUtils = window.PCore.getDataPageUtils();
-            const parameters = { CaseKey: caseID };
+            const parameters = { CaseKey: caseID, CaseClass: caseClass };
 
             const dataPageData = await dataPageUtils.getDataAsync(dataPage, getPConnect().getContextName(), parameters);
 
