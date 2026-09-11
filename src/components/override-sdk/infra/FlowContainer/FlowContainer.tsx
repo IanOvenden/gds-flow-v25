@@ -21,6 +21,44 @@ interface FlowContainerProps extends PConnProps {
   activeContainerItemID: string;
 }
 
+const getFieldLabel = (pConnect: any, visited = new Set<any>()): string => {
+  if (!pConnect || visited.has(pConnect)) return '';
+  visited.add(pConnect);
+
+  const children = pConnect.getChildren?.() || [];
+  for (const child of children) {
+    const childPConnect = child?.getPConnect?.() || child?.props?.getPConnect?.();
+    const childConfig = childPConnect?.getConfigProps?.() || {};
+    const resolvedConfig = childPConnect?.resolveConfigProps?.(childConfig) || childConfig;
+    const label = child?.props?.label || resolvedConfig.label;
+
+    if (typeof label === 'string' && label.trim()) {
+      return label;
+    }
+
+    const nestedLabel = getFieldLabel(childPConnect, visited);
+    if (nestedLabel) return nestedLabel;
+  }
+
+  return '';
+};
+
+const getRenderedFieldLabel = (node: any, visited = new Set<any>()): string => {
+  if (!node || typeof node !== 'object' || visited.has(node)) return '';
+  visited.add(node);
+
+  const label = node.props?.label;
+  if (typeof label === 'string' && label.trim()) return label;
+
+  const children = Array.isArray(node.props?.children) ? node.props.children : [node.props?.children];
+  for (const child of children) {
+    const childLabel = getRenderedFieldLabel(child, visited);
+    if (childLabel) return childLabel;
+  }
+
+  return '';
+};
+
 //
 // WARNING:  It is not expected that this file should be modified.  It is part of infrastructure code that works with
 // Redux and creation/update of Redux containers and PConnect.  Modifying this code could have undesireable results and
@@ -33,6 +71,8 @@ export const FlowContainer = (props: FlowContainerProps) => {
   const ToDo = getComponentFromMap('Todo'); // NOTE: ConstellationJS Engine uses "Todo" and not "ToDo"!!!
   const AlertBanner = getComponentFromMap('AlertBanner');
   const backButtonPortalRef = useRef<HTMLDivElement>(null);
+  const flowContainerRef = useRef<HTMLDivElement>(null);
+  const promotedFieldIdRef = useRef('');
 
   const pCoreConstants = PCore.getConstants();
   const { TODO } = pCoreConstants;
@@ -62,6 +102,11 @@ export const FlowContainer = (props: FlowContainerProps) => {
   const [todo_caseInfoID, setCaseInfoID] = useState('');
   const [todo_showTodoList, setShowTodoList] = useState(false);
   const [todo_datasource, setTodoDatasource] = useState({});
+  const [renderedFieldLabel, setRenderedFieldLabel] = useState('');
+  const [renderedFieldId, setRenderedFieldId] = useState('');
+
+  const fieldLabel = renderedFieldLabel || getFieldLabel(thePConn) || getRenderedFieldLabel(rootViewElement);
+  const pageHeading = fieldLabel || containerName;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [todo_context, setTodoContext] = useState('');
 
@@ -111,6 +156,75 @@ export const FlowContainer = (props: FlowContainerProps) => {
     // from WC SDK connectedCallback (mount)
     initComponent();
   }, []);
+
+  useEffect(() => {
+    const container = flowContainerRef.current;
+    if (!container) return;
+    setRenderedFieldLabel('');
+    setRenderedFieldId('');
+    promotedFieldIdRef.current = '';
+    let updateTimer: number | undefined;
+
+    const updateFieldLabel = () => {
+      const fieldLabelElements = Array.from(container.querySelectorAll('label.govuk-label, legend.govuk-fieldset__legend')).filter(
+        element => element.textContent?.trim() && !element.closest('h1')
+      );
+      const fieldControls = container.querySelectorAll('input, select, textarea');
+
+      if (fieldControls.length === 1 && promotedFieldIdRef.current && fieldLabelElements.length === 1) {
+        fieldLabelElements[0].remove();
+        return;
+      }
+
+      if (fieldLabelElements.length === 0 && fieldControls.length === 1 && promotedFieldIdRef.current) {
+        return;
+      }
+
+      if (fieldLabelElements.length !== 1 || fieldControls.length !== 1) {
+        fieldLabelElements.forEach(element => element.removeAttribute('hidden'));
+        promotedFieldIdRef.current = '';
+        setRenderedFieldLabel('');
+        setRenderedFieldId('');
+        return;
+      }
+
+      const fieldLabelElement = fieldLabelElements[0];
+      const fieldLabel = fieldLabelElement?.textContent?.trim() || '';
+
+      if (fieldLabel) {
+        setRenderedFieldLabel(fieldLabel);
+        if (fieldLabelElement instanceof HTMLLabelElement) {
+          promotedFieldIdRef.current = fieldLabelElement.htmlFor;
+          setRenderedFieldId(fieldLabelElement.htmlFor);
+        }
+        fieldLabelElement.setAttribute('hidden', '');
+      }
+    };
+
+    const scheduleUpdate = () => {
+      if (updateTimer) window.clearTimeout(updateTimer);
+      updateTimer = window.setTimeout(updateFieldLabel, 50);
+    };
+
+    scheduleUpdate();
+    const observer = new MutationObserver(scheduleUpdate);
+    observer.observe(container, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      if (updateTimer) window.clearTimeout(updateTimer);
+    };
+  }, [itemKey]);
+
+  useEffect(() => {
+    if (!renderedFieldId) return;
+
+    const container = flowContainerRef.current;
+    const originalFieldLabel = Array.from(container?.querySelectorAll(`label[for="${renderedFieldId}"]`) || []).find(
+      element => !element.closest('h1')
+    );
+    originalFieldLabel?.remove();
+  }, [renderedFieldId]);
 
   useEffect(() => {
     // @ts-expect-error - Property 'getMetadata' is private and only accessible within class 'C11nEnv'
@@ -187,9 +301,23 @@ export const FlowContainer = (props: FlowContainerProps) => {
     return hasBanner && <AlertBanner id='flowContainerBanner' variant='urgent' messages={messages} />;
   };
 
+  const renderPageHeading = () => {
+    if (fieldLabel && renderedFieldId) {
+      return (
+        <h1 className='govuk-label-wrapper'>
+          <label className='govuk-label govuk-label--l' htmlFor={renderedFieldId} hidden={false}>
+            {pageHeading}
+          </label>
+        </h1>
+      );
+    }
+
+    return <h1 className='govuk-heading-l'>{localizedVal(pageHeading, undefined, key)}</h1>;
+  };
+
   return (
     <BackButtonPortalContext.Provider value={backButtonPortalRef}>
-      <div id={buildName} className='psdk-flow-container-top govuk-main-wrapper govuk-!-text-align-left'>
+      <div ref={flowContainerRef} id={buildName} className='psdk-flow-container-top govuk-main-wrapper govuk-!-text-align-left'>
         {!bShowConfirm &&
           (!todo_showTodo ? (
             !displayOnlyFA ? (
@@ -199,7 +327,7 @@ export const FlowContainer = (props: FlowContainerProps) => {
                     <strong className='govuk-tag govuk-tag--blue psdk-avatar'>{operatorInitials}</strong>
                   </div>
                   <div ref={backButtonPortalRef} />
-                  <h1 className='govuk-heading-l'>{localizedVal(containerName, undefined, key)}</h1>
+                  {renderPageHeading()}
                   <p className='govuk-body-s govuk-!-margin-bottom-0'>
                     {localizedVal('In', 'Todo')} {caseId} \u2022 {localizedVal('Priority', 'Todo')} {urgency}
                   </p>
@@ -214,7 +342,7 @@ export const FlowContainer = (props: FlowContainerProps) => {
             ) : (
               <section>
                 <div ref={backButtonPortalRef} />
-                <h1 className='govuk-heading-l'>{localizedVal(containerName, undefined, key)}</h1>
+                {renderPageHeading()}
                 {displayPageMessages()}
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <Assignment getPConnect={getPConnect} itemKey={itemKey}>
