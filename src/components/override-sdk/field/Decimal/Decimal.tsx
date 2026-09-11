@@ -95,8 +95,6 @@ export default function Decimal(props: DecimalProps) {
     );
   }
 
-  const testProps: any = { 'data-test-id': testId };
-
   function decimalOnBlur() {
     handleEvent(actions, 'changeNblur', propName, values);
   }
@@ -110,7 +108,6 @@ export default function Decimal(props: DecimalProps) {
       {label && (
         <label className={`govuk-label${hideLabel ? ' govuk-visually-hidden' : ''}`} htmlFor={fieldId}>
           {label}
-          {required && <span className='govuk-required'> *</span>}
         </label>
       )}
 
