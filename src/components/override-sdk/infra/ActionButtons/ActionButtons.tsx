@@ -118,15 +118,15 @@ export default function ActionButtons({ getPConnect, arMainButtons = [], arSecon
       const editableFields = PCore.getFormUtils().getEditableFields(contextName) ?? [];
 
       const editableFieldNames = editableFields.map((field: any) => {
-        const name = field.name ?? '';
-        return name.startsWith('caseInfo.content.') ? name.replace('caseInfo.content.', '') : name;
+        let name = field.name ?? '';
+        name = name.startsWith('caseInfo.content.') ? name.replace('caseInfo.content.', '') : name;
+        const baseFieldName = name.split('[')[0];
+        const dotCount = (baseFieldName.match(/\./g) || []).length;
+        return dotCount > 1 ? baseFieldName.substring(0, baseFieldName.lastIndexOf('.')) : baseFieldName;
       });
 
-      // Check if CYA value matches exactly or matches before array notation (e.g., ComplainantAddresses matches ComplainantAddresses[0].Operation)
-      const cyaMatchesEditableField = editableFieldNames.some((fieldName: string) => {
-        const baseFieldName = fieldName.split('[')[0];
-        return fieldName === cyaValue || baseFieldName === cyaValue;
-      });
+      // Check if CYA value matches any of the editable field names
+      const cyaMatchesEditableField = editableFieldNames.some((fieldName: string) => fieldName === cyaValue);
 
       if (!cyaMatchesEditableField) {
         runRealPrevious();
