@@ -135,6 +135,9 @@ function extractQAFromChildren(arChildren: any[]): QAEntry[] {
     if (question === 'CYA Target') continue;
 
     const config = pConn.getConfigProps?.();
+
+    if (config?.visibility === false) continue;
+
     const isAddress = config?.name?.includes('Address') || config?.authorContext?.includes('Address') || config?.context?.includes('Address');
 
     if (isAddress) {
