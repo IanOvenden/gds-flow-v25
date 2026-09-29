@@ -43,7 +43,13 @@ export default function MainScreen() {
     setShowPega(false);
   };
 
-  const createComplaintCase = async () => {
+  const createPoultryCase = async () => {
+    PCore.getMashupApi().createCase('OBMN01-PoultryM-Work-ApplicationIntake', PCore.getConstants().APP.APP, {});
+    setShowLandingPage(false);
+    setShowPega(true);
+  };
+
+  const createNotifyAvianDiseaseCase = async () => {
     PCore.getMashupApi().createCase('OBMN01-PoultryM-Work-DiseaseNotification', PCore.getConstants().APP.APP, {});
     setShowLandingPage(false);
     setShowPega(true);
@@ -58,7 +64,7 @@ export default function MainScreen() {
           <div className='govuk-grid-row'>
             <div className='govuk-grid-column-two-thirds'>
               <div className='gem-c-heading govuk-!-margin-bottom-8'>
-                <h1 className='gem-c-heading__text govuk-heading-xl'>Complain about HMRC</h1>
+                <h1 className='gem-c-heading__text govuk-heading-xl'>Register your poultry with HMRC</h1>
               </div>
             </div>
           </div>
@@ -69,10 +75,23 @@ export default function MainScreen() {
                   type='submit'
                   className='govuk-button'
                   data-module='govuk-button'
-                  onClick={createComplaintCase}
+                  onClick={createPoultryCase}
                   style={{ marginBottom: '2rem' }}
                 >
-                  Make a complaint
+                  Register poultry
+                </button>
+
+                <h2 className='govuk-heading-m' id='notify-avian-disease'>
+                  Notify avian disease
+                </h2>
+                <button
+                  type='submit'
+                  className='govuk-button govuk-button--secondary'
+                  data-module='govuk-button'
+                  onClick={createNotifyAvianDiseaseCase}
+                  style={{ marginBottom: '2rem' }}
+                >
+                  Notify avian disease
                 </button>
                 <div
                   data-module='govspeak'
@@ -80,67 +99,77 @@ export default function MainScreen() {
                   data-govspeak-module-started='true'
                 >
                   <p>
-                    Contact HM Revenue and Customs (<abbr title='HM Revenue and Customs'>HMRC</abbr>) as soon as possible if you have a complaint
-                    about their service, for example because there were unreasonable delays.
+                    Register with HM Revenue and Customs (<abbr title='HM Revenue and Customs'>HMRC</abbr>) as soon as possible if you keep poultry or
+                    other captive birds, for example chickens, ducks, geese or birds of prey.
                   </p>
 
                   <div role='note' aria-label='Information' className='application-notice info-notice'>
                     <p>
-                      This guide is also available <a href='/cwyno-am-cthem'>in Welsh (Cymraeg)</a>.
+                      This guide is also available{' '}
+                      <a className='govuk-link' href='/cofrestru-dofednod'>
+                        in Welsh (Cymraeg)
+                      </a>
+                      .
                     </p>
                   </div>
 
                   <div role='note' aria-label='Warning' className='application-notice help-notice'>
                     <p>
-                      You should continue to pay tax while your complaint is being dealt with. If you stop or delay your payments you may be charged
-                      interest or penalties.
+                      You must register your birds even if you only keep them as pets. If you do not register, or you do not keep your registration up
+                      to date, you may be fined.
                     </p>
                   </div>
 
-                  <h2 id='before-you-complain'>Before you complain</h2>
+                  <h2 id='before-you-register'>Before you register</h2>
 
                   <p>
-                    If you do not need to complain, there are other ways to{' '}
-                    <a href='/contact-hmrc'>
+                    If you do not need to register, there are other ways to{' '}
+                    <a className='govuk-link' href='/contact-hmrc'>
                       contact <abbr title='HM Revenue and Customs'>HMRC</abbr>
                     </a>
                     . You can also{' '}
-                    <a href='/guidance/check-when-you-can-expect-a-reply-from-hmrc'>
+                    <a className='govuk-link' href='/guidance/check-when-you-can-expect-a-reply-from-hmrc'>
                       check when to expect a reply from <abbr title='HM Revenue and Customs'>HMRC</abbr>
                     </a>
                     .
                   </p>
 
                   <p>
-                    If you’re an agent, use the <a href='/guidance/tax-agents-handbook/contacting-hmrc'>Tax agents handbook</a> to find information
-                    about <abbr title='HM Revenue and Customs'>HMRC</abbr>’s Agent Account Managers service and dedicated helplines.
+                    If you’re an agent, use the{' '}
+                    <a className='govuk-link' href='/guidance/agents-handbook/contacting-hmrc'>
+                      Agents handbook
+                    </a>{' '}
+                    to find information about <abbr title='HM Revenue and Customs'>HMRC</abbr>’s Agent Account Managers service and dedicated
+                    helplines.
                   </p>
 
                   <p>
-                    <abbr title='HM Revenue and Customs'>HMRC</abbr> cannot investigate complaints when:
+                    <abbr title='HM Revenue and Customs'>HMRC</abbr> cannot process your registration when:
                   </p>
 
                   <ul>
                     <li>
-                      you disagree with a tax decision or a penalty -{' '}
-                      <a href='/tax-appeals'>follow a different process to get a review of a decision</a>
+                      you do not have a county parish holding (CPH) number for the land where the birds are kept -{' '}
+                      <a className='govuk-link' href='/guidance/apply-for-a-county-parish-holding-cph-number'>
+                        apply for a CPH number first
+                      </a>
                     </li>
-                    <li>a complaint is currently being investigated by the Adjudicators Office or the Parliamentary and Health Service Ombudsman</li>
+                    <li>the premises where the birds are kept is currently under investigation for a suspected or confirmed disease outbreak</li>
                   </ul>
 
-                  <h3 id='if-youre-complaining-about-paye-or-self-assessment'>If you’re complaining about PAYE or Self Assessment</h3>
+                  <h3 id='if-youre-registering-50-or-more-birds'>If you’re registering 50 or more birds</h3>
 
                   <p>
-                    If you’re an individual you may be able to{' '}
-                    <a rel='external' href='https://www.tax.service.gov.uk/ask-hmrc/webchat/paye-and-self-assessment-resolutions'>
+                    If you keep a commercial flock you may be able to{' '}
+                    <a className='govuk-link' rel='external' href='https://www.tax.service.gov.uk/ask-hmrc/webchat/poultry-registration'>
                       use the webchat service
                     </a>{' '}
-                    to resolve your issue before you make a formal complaint.
+                    to check what you need before you register your flock.
                   </p>
 
-                  <h2 id='how-to-complain'>How to complain</h2>
+                  <h2 id='how-to-register'>How to register</h2>
 
-                  <h3 id='complain-online'>Complain online</h3>
+                  <h3 id='register-online'>Register online</h3>
 
                   <p>
                     You’ll need to sign in to use this service. If you do not already have sign in details, you’ll be able to create them when you
@@ -156,138 +185,149 @@ export default function MainScreen() {
 
                   <ul>
                     <li>
-                      <a rel='external' href='http://www.tax.service.gov.uk/digital-forms/form/make-a-complaint-online/draft/guide'>
-                        complain if you’re an individual
+                      <a
+                        className='govuk-link'
+                        rel='external'
+                        href='http://www.tax.service.gov.uk/digital-forms/form/register-poultry-online/draft/guide'
+                      >
+                        register if you’re an individual keeper
                       </a>
                     </li>
                     <li>
-                      <a rel='external' href='http://www.tax.service.gov.uk/digital-forms/form/make-a-business-complaint-online/draft/guide'>
-                        complain online if you’re a business
+                      <a
+                        className='govuk-link'
+                        rel='external'
+                        href='http://www.tax.service.gov.uk/digital-forms/form/register-business-poultry-online/draft/guide'
+                      >
+                        register online if you’re a business
                       </a>
                     </li>
                     <li>
-                      <a rel='external' href='https://www.tax.service.gov.uk/submissions/new-form/complain-about-hmrc-as-agent'>
-                        complain online if you’re an agent
+                      <a className='govuk-link' rel='external' href='https://www.tax.service.gov.uk/submissions/new-form/register-poultry-as-agent'>
+                        register online if you’re an agent
                       </a>{' '}
                       (you must have{' '}
-                      <a href='/guidance/how-to-get-authorised-to-act-as-a-tax-agent-on-behalf-of-your-clients'>permission from your client</a> to do
-                      this)
+                      <a className='govuk-link' href='/guidance/how-to-get-authorised-to-act-as-an-agent-on-behalf-of-your-clients'>
+                        permission from your client
+                      </a>{' '}
+                      to do this)
                     </li>
                   </ul>
 
-                  <h3 id='complain-by-phone-or-post'>Complain by phone or post</h3>
+                  <h3 id='register-by-phone-or-post'>Register by phone or post</h3>
 
                   <p>
                     You can also{' '}
-                    <a href='https://www.gov.uk/government/organisations/hm-revenue-customs/contact/complain-about-hmrc'>complain by phone or post</a>
+                    <a className='govuk-link' href='https://www.gov.uk/government/organisations/hm-revenue-customs/contact/register-poultry'>
+                      register by phone or post
+                    </a>
                     . You’ll need:
                   </p>
 
                   <ul>
-                    <li>your National Insurance number, Unique Taxpayer Reference (UTR) or VAT number</li>
+                    <li>your county parish holding (CPH) number, National Insurance number or VAT number</li>
                     <li>your full name, address, phone number and email address</li>
-                    <li>details of what happened and when</li>
-                    <li>to say how you’d like your complaint resolved</li>
+                    <li>details of the species you keep, how many birds you have and where they are kept</li>
+                    <li>to say why you keep the birds, for example for eggs, meat or as pets</li>
                   </ul>
 
-                  <h2 id='if-you-need-extra-support-with-your-complaint'>If you need extra support with your complaint</h2>
+                  <h2 id='if-you-need-extra-support-with-your-registration'>If you need extra support with your registration</h2>
 
                   <p>
-                    Tell <abbr title='HM Revenue and Customs'>HMRC</abbr> when you complain if you need extra support with your complaint because of a
-                    health condition or your personal circumstances.
+                    Tell <abbr title='HM Revenue and Customs'>HMRC</abbr> when you register if you need extra support with your registration because
+                    of a health condition or your personal circumstances.
                   </p>
 
-                  <h3 id='if-you-need-someone-to-complain-on-your-behalf'>If you need someone to complain on your behalf</h3>
+                  <h3 id='if-you-need-someone-to-register-on-your-behalf'>If you need someone to register on your behalf</h3>
 
                   <p>
-                    You can ask someone else to complain for you. You’ll need to{' '}
-                    <a href='https://www.gov.uk/appoint-tax-agent'>
+                    You can ask someone else to register for you. You’ll need to{' '}
+                    <a className='govuk-link' href='https://www.gov.uk/appoint-agent'>
                       authorise them to deal with <abbr title='HM Revenue and Customs'>HMRC</abbr> on your behalf
                     </a>{' '}
-                    before they can make a complaint for you.
+                    before they can register your birds for you.
                   </p>
 
-                  <h2 id='what-happens-when-you-complain-to-hmrc'>
-                    What happens when you complain to <abbr title='HM Revenue and Customs'>HMRC</abbr>
+                  <h2 id='what-happens-when-you-register-with-hmrc'>
+                    What happens when you register with <abbr title='HM Revenue and Customs'>HMRC</abbr>
                   </h2>
 
                   <p>
-                    <abbr title='HM Revenue and Customs'>HMRC</abbr> will review your complaint. They will investigate what happened and what should
-                    have happened. This is called a ‘first tier’ review.
+                    <abbr title='HM Revenue and Customs'>HMRC</abbr> will review your registration. They will check the details of your birds and the
+                    premises where they are kept.
                   </p>
 
                   <p>
-                    Normally, <abbr title='HM Revenue and Customs'>HMRC</abbr> will contact you within 6 weeks of receiving your complaint. They will
-                    tell you the outcome of the first tier review and what the next step is.
+                    Normally, <abbr title='HM Revenue and Customs'>HMRC</abbr> will contact you within 6 weeks of receiving your registration. They
+                    will confirm your registration reference and what the next step is.
                   </p>
 
                   <div role='note' aria-label='Information' className='application-notice info-notice'>
                     <p>
-                      <abbr title='HM Revenue and Customs'>HMRC</abbr> will not treat you differently to anyone else because you’ve made a complaint.
-                      They will handle your complaint fairly, confidentially and investigate the issues thoroughly.
+                      Once you’re registered, <abbr title='HM Revenue and Customs'>HMRC</abbr> will contact you if there is a bird flu outbreak in
+                      your area and tell you what you need to do to protect your flock.
                     </p>
                   </div>
 
                   <p>
-                    <abbr title='HM Revenue and Customs'>HMRC</abbr> will consider refunding any reasonable costs directly caused by their mistakes or
-                    delays. Costs can include:
+                    You must tell <abbr title='HM Revenue and Customs'>HMRC</abbr> if your details change after you register. Changes can include:
                   </p>
 
                   <ul>
-                    <li>postage</li>
-                    <li>phone charges</li>
-                    <li>professional fees</li>
+                    <li>the number of birds you keep</li>
+                    <li>the species you keep</li>
+                    <li>your contact details or the address where the birds are kept</li>
                   </ul>
 
-                  <p>Keep your receipts if you want a refund.</p>
+                  <p>Keep your registration reference to update your details.</p>
 
-                  <h3 id='if-you-disagree-with-the-outcome-of-the-first-tier-review'>If you disagree with the outcome of the first tier review</h3>
-
-                  <p>You can ask for your complaint to be reviewed a second time. This is called a ‘second tier’ review.&nbsp;</p>
-
-                  <p>You can either do this online or by post using the address provided during the first tier review.</p>
+                  <h3 id='if-you-stop-keeping-poultry'>If you stop keeping poultry</h3>
 
                   <p>
-                    A different person will review your complaint, look at how your complaint was handled at the first tier review and let you know
-                    the outcome.
+                    You must tell <abbr title='HM Revenue and Customs'>HMRC</abbr> if you no longer keep any poultry or other captive birds.&nbsp;
+                  </p>
+
+                  <p>You can either do this online or by post using the address provided when you registered.</p>
+
+                  <p>
+                    Your registration will be closed. You will need to register again if you start keeping poultry or other captive birds in the
+                    future.
                   </p>
 
                   <p>
-                    The decision from the second tier review is final. You will not be able to ask <abbr title='HM Revenue and Customs'>HMRC</abbr>{' '}
-                    for another review.
+                    If you move your birds to new premises, do not close your registration. You will not need to register again - update your
+                    registration with the new address instead.
                   </p>
 
-                  <h3 id='if-you-disagree-with-the-outcome-of-the-second-tier-review'>If you disagree with the outcome of the second tier review</h3>
-
-                  <p>
-                    You can{' '}
-                    <a href='/guidance/how-to-complain-to-the-adjudicators-office-about-hmrc-or-the-voa'>
-                      ask the Adjudicator’s Office to review your complaint
-                    </a>
-                    . <abbr title='HM Revenue and Customs'>HMRC</abbr> will tell you how to do this.
-                  </p>
+                  <h3 id='if-you-suspect-avian-disease-in-your-birds'>If you suspect avian disease in your birds</h3>
 
                   <p>
-                    This service is free and independent of <abbr title='HM Revenue and Customs'>HMRC</abbr>.
+                    You must{' '}
+                    <a className='govuk-link' href='/guidance/report-a-notifiable-disease-in-animals'>
+                      notify avian disease immediately
+                    </a>{' '}
+                    if you suspect bird flu (avian influenza) or Newcastle disease in your flock. Failure to do so is an offence.
                   </p>
+
+                  <p>This service is free and available at all times.</p>
 
                   <div role='note' aria-label='Information' className='application-notice info-notice'>
                     <p>
-                      You can only ask the Adjudicator’s Office to look at your complaint if you’ve had a first and second tier review from{' '}
+                      You can notify avian disease even if you have not yet registered your birds with{' '}
                       <abbr title='HM Revenue and Customs'>HMRC</abbr>.
                     </p>
                   </div>
 
-                  <h3 id='if-you-disagree-with-the-adjudicators-office'>If you disagree with the Adjudicator’s Office</h3>
+                  <h3 id='if-a-disease-outbreak-is-confirmed'>If a disease outbreak is confirmed</h3>
 
                   <p>
-                    You can{' '}
-                    <a rel='external' href='https://www.parliament.uk/mps-lords-and-offices/mps/'>
-                      ask your MP
+                    You must follow the{' '}
+                    <a className='govuk-link' rel='external' href='https://www.gov.uk/guidance/bird-flu-avian-influenza-latest-situation-in-england'>
+                      latest bird flu rules
                     </a>{' '}
-                    to refer your complaint to the{' '}
-                    <a rel='external' href='https://ombudsman.org.uk/'>
-                      Parliamentary and Health Service Ombudsman
+                    and any restrictions set out in a{' '}
+                    <a className='govuk-link' rel='external' href='https://www.gov.uk/government/collections/avian-influenza-prevention-zones'>
+                      Avian Influenza Prevention Zone
                     </a>
                     .
                   </p>
@@ -317,54 +357,54 @@ export default function MainScreen() {
                         <a
                           className='govuk-link govuk-link gem-c-related-navigation__section-link govuk-link gem-c-related-navigation__section-link--sidebar  govuk-link gem-c-related-navigation__section-link--other'
                           data-ga4-link='{"event_name":"navigation","type":"related content","index_section":"1","index_link":"1","index_section_count":"2","index_total":"6","section":"Related content"}'
-                          href='/tax-appeals'
+                          href='/guidance/bird-flu-avian-influenza-how-to-spot-and-report-it'
                         >
-                          Disagree with a tax decision or penalty
+                          Bird flu (avian influenza): how to spot and report it
                         </a>
                       </li>
                       <li className='gem-c-related-navigation__link'>
                         <a
                           className='govuk-link govuk-link gem-c-related-navigation__section-link govuk-link gem-c-related-navigation__section-link--sidebar  govuk-link gem-c-related-navigation__section-link--other'
                           data-ga4-link='{"event_name":"navigation","type":"related content","index_section":"1","index_link":"2","index_section_count":"2","index_total":"6","section":"Related content"}'
-                          href='/guidance/complain-about-serious-misconduct-by-hm-revenue-and-customs-staff'
+                          href='/guidance/apply-for-a-county-parish-holding-cph-number'
                         >
-                          Complain about serious misconduct by HMRC staff
+                          Apply for a county parish holding (CPH) number
                         </a>
                       </li>
                       <li className='gem-c-related-navigation__link'>
                         <a
                           className='govuk-link govuk-link gem-c-related-navigation__section-link govuk-link gem-c-related-navigation__section-link--sidebar  govuk-link gem-c-related-navigation__section-link--other'
                           data-ga4-link='{"event_name":"navigation","type":"related content","index_section":"1","index_link":"3","index_section_count":"2","index_total":"6","section":"Related content"}'
-                          href='/tax-tribunal'
+                          href='/guidance/poultry-on-farm-welfare'
                         >
-                          Appeal to the tax tribunal
+                          Poultry welfare on farms
                         </a>
                       </li>
                       <li className='gem-c-related-navigation__link'>
                         <a
                           className='govuk-link govuk-link gem-c-related-navigation__section-link govuk-link gem-c-related-navigation__section-link--sidebar  govuk-link gem-c-related-navigation__section-link--other'
                           data-ga4-link='{"event_name":"navigation","type":"related content","index_section":"1","index_link":"4","index_section_count":"2","index_total":"6","section":"Related content"}'
-                          href='/guidance/tax-disputes-alternative-dispute-resolution-adr'
+                          href='/guidance/biosecurity-and-preventing-disease-in-captive-birds'
                         >
-                          Use alternative dispute resolution to settle a tax dispute
+                          Biosecurity and preventing disease in captive birds
                         </a>
                       </li>
                       <li className='gem-c-related-navigation__link'>
                         <a
                           className='govuk-link govuk-link gem-c-related-navigation__section-link govuk-link gem-c-related-navigation__section-link--sidebar  govuk-link gem-c-related-navigation__section-link--other'
                           data-ga4-link='{"event_name":"navigation","type":"related content","index_section":"1","index_link":"5","index_section_count":"2","index_total":"6","section":"Related content"}'
-                          href='/government/publications/hmrc-charter'
+                          href='/guidance/moving-poultry-and-hatching-eggs'
                         >
-                          HMRC Charter
+                          Moving poultry and hatching eggs
                         </a>
                       </li>
                       <li className='gem-c-related-navigation__link'>
                         <a
                           className='govuk-link govuk-link gem-c-related-navigation__section-link govuk-link gem-c-related-navigation__section-link--sidebar govuk-link gem-c-related-navigation__section-link--inline  govuk-link gem-c-related-navigation__section-link--other'
                           data-ga4-link='{"event_name":"navigation","type":"related content","index_section":"1","index_link":"6","index_section_count":"2","index_total":"6","section":"Related content"}'
-                          href='/government/collections/paying-hmrc-detailed-information'
+                          href='/government/collections/keeping-farmed-animals-detailed-information'
                         >
-                          Paying HMRC: detailed information
+                          Keeping farmed animals: detailed information
                         </a>
                       </li>
                     </ul>
@@ -389,9 +429,9 @@ export default function MainScreen() {
                         <a
                           className='govuk-link govuk-link gem-c-related-navigation__section-link govuk-link gem-c-related-navigation__section-link--sidebar'
                           data-ga4-link='{"event_name":"navigation","type":"related content","index_section":"2","index_link":"1","index_section_count":"2","index_total":"1","section":"Collection"}'
-                          href='/government/collections/hmrc-complaints-and-appeals-detailed-information'
+                          href='/government/collections/hmrc-poultry-registration-detailed-information'
                         >
-                          HMRC complaints and appeals: detailed information
+                          HMRC poultry registration: detailed information
                         </a>
                       </li>
                     </ul>
@@ -428,9 +468,9 @@ export default function MainScreen() {
                         <a
                           className='govuk-link govuk-link gem-c-related-navigation__section-link govuk-link gem-c-related-navigation__section-link--footer'
                           data-ga4-link='{"event_name":"navigation","type":"contextual footer","index_section":"1","index_link":"1","index_section_count":"2","index_total":"1","section":"Explore the topic"}'
-                          href='/browse/tax/dealing-with-hmrc'
+                          href='/browse/environment-countryside/keeping-farmed-animals'
                         >
-                          Dealing with HMRC
+                          Keeping farmed animals
                         </a>
                       </li>
                     </ul>
@@ -456,9 +496,9 @@ export default function MainScreen() {
                           className='govuk-link govuk-link gem-c-related-navigation__section-link govuk-link gem-c-related-navigation__section-link--footer  govuk-link gem-c-related-navigation__section-link--other'
                           rel='external'
                           data-ga4-link='{"event_name":"navigation","type":"contextual footer","index_section":"2","index_link":"1","index_section_count":"2","index_total":"4","section":"Elsewhere on the web"}'
-                          href='https://www.gov.uk/dealing-hmrc-additional-needs'
+                          href='https://www.gov.uk/government/organisations/animal-and-plant-health-agency'
                         >
-                          Dealing with HMRC if you have additional needs
+                          Animal and Plant Health Agency (APHA)
                         </a>
                       </li>
                       <li className='gem-c-related-navigation__link'>
@@ -476,9 +516,9 @@ export default function MainScreen() {
                           className='govuk-link govuk-link gem-c-related-navigation__section-link govuk-link gem-c-related-navigation__section-link--footer  govuk-link gem-c-related-navigation__section-link--other'
                           rel='external'
                           data-ga4-link='{"event_name":"navigation","type":"contextual footer","index_section":"2","index_link":"3","index_section_count":"2","index_total":"4","section":"Elsewhere on the web"}'
-                          href='http://taxaid.org.uk/'
+                          href='https://www.nfuonline.com/'
                         >
-                          TaxAid
+                          National Farmers&apos; Union (NFU)
                         </a>
                       </li>
                       <li className='gem-c-related-navigation__link'>
@@ -486,9 +526,9 @@ export default function MainScreen() {
                           className='govuk-link govuk-link gem-c-related-navigation__section-link govuk-link gem-c-related-navigation__section-link--footer  govuk-link gem-c-related-navigation__section-link--other'
                           rel='external'
                           data-ga4-link='{"event_name":"navigation","type":"contextual footer","index_section":"2","index_link":"4","index_section_count":"2","index_total":"4","section":"Elsewhere on the web"}'
-                          href='http://www.taxvol.org.uk/'
+                          href='https://www.bhwt.org.uk/'
                         >
-                          Tax help for older people
+                          British Hen Welfare Trust
                         </a>
                       </li>
                     </ul>
@@ -498,9 +538,6 @@ export default function MainScreen() {
             </div>
           </div>
         </main>
-        <button type='submit' className='govuk-button' data-module='govuk-button' onClick={createComplaintCase} style={{ marginBottom: '2rem' }}>
-          Make a complaint
-        </button>
       </div>
     );
   }

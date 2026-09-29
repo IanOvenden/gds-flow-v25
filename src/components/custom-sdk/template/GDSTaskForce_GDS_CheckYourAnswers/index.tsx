@@ -139,6 +139,7 @@ function extractQAFromChildren(arChildren: any[]): QAEntry[] {
     if (config?.visibility === false) continue;
 
     const isAddress = config?.name?.includes('Address') || config?.authorContext?.includes('Address') || config?.context?.includes('Address');
+    const usesAuthorContext = config?.authorContext;
 
     if (isAddress) {
       // Handle address array - create separate entries for each address
@@ -172,6 +173,37 @@ function extractQAFromChildren(arChildren: any[]): QAEntry[] {
             propRef
           });
         });
+      }
+    } else if (usesAuthorContext) {
+      // Handle other components using authorContext (like LandParcel) - generic extraction
+      const contextPath = config.authorContext;
+      const rawPropRef = contextPath as string | undefined;
+      const propRef = rawPropRef?.startsWith('.') ? rawPropRef.slice(1) : rawPropRef;
+      const contextData = pConn.getValue?.(contextPath);
+
+      if (contextData !== undefined && contextData !== null) {
+        let answer = '';
+
+        // If it's an object, extract meaningful fields (filter out system fields)
+        if (typeof contextData === 'object') {
+          const meaningfulParts = Object.entries(contextData)
+            .filter(([key]) => key !== 'classID' && !key.startsWith('py'))
+            .map(([, value]) => value)
+            .filter(val => val && val.toString().trim());
+
+          answer = meaningfulParts.join(', ');
+        } else {
+          answer = toDisplayString(contextData);
+        }
+
+        if (answer.trim()) {
+          out.push({
+            key: propRef ?? question ?? Math.random().toString(16),
+            question,
+            answer,
+            propRef
+          });
+        }
       }
     } else {
       // Regular field
@@ -274,10 +306,11 @@ export default function GdsTaskForceGdsCheckYourAnswers(props: PropsWithChildren
       const propRef = pConn.getStateProps?.()?.value as string | undefined;
       const question = getQuestionLabel(pConn);
 
-      // Exclude address components (already displayed in CYA summary)
+      // Exclude address and other authorContext components (already displayed in CYA summary)
       const config = pConn.getConfigProps?.();
       const isAddress = config?.name?.includes('Address') || config?.authorContext?.includes('Address') || config?.context?.includes('Address');
-      if (isAddress) return false;
+      const usesAuthorContext = config?.authorContext;
+      if (isAddress || usesAuthorContext) return false;
 
       if (!propRef) return true; // layout/wrapper/other
 
