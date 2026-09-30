@@ -175,9 +175,9 @@ export const FlowContainer = (props: FlowContainerProps) => {
 
     const updateFieldLabel = () => {
       const fieldLabelElements = Array.from(container.querySelectorAll('label.govuk-label, legend.govuk-fieldset__legend')).filter(
-        element => element.textContent?.trim() && !element.closest('h1')
+        element => element.textContent?.trim() && !element.closest('h1') && (element as any).htmlFor !== 'CYATarget'
       );
-      const fieldControls = container.querySelectorAll('input, select, textarea');
+      const fieldControls = Array.from(container.querySelectorAll('input, select, textarea')).filter(element => (element as any).id !== 'CYATarget');
 
       const soleFieldLabel = fieldLabelElements.length === 1 ? fieldLabelElements[0] : undefined;
       const soleFieldLabelText = soleFieldLabel?.textContent?.trim() || '';

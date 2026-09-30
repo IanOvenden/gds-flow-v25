@@ -74,9 +74,10 @@ function getQuestionLabel(pConn: any): string | undefined {
 }
 
 /**
- * Reliable answer extraction (what worked for you before):
+ * Reliable answer extraction with formatter support:
  * - Use property ref from stateProps.value
  * - Use pConn.getValue(propRef, pageRef) (fallback to getValue(propRef))
+ * - Apply formatter if available (e.g., Date-Long for date fields)
  */
 function getAnswerFromKid(kid: any): string {
   try {
@@ -104,6 +105,28 @@ function getAnswerFromKid(kid: any): string {
     }
     if (answer === undefined && kid?.displayValue != null) {
       answer = kid.displayValue;
+    }
+
+    // Apply date formatting if the field type is Date
+    if (answer !== undefined && answer !== '' && typeof answer === 'string') {
+      const metadata = pConn?.getRawMetadata?.();
+      const fieldType = metadata?.type;
+
+      if (fieldType === 'Date') {
+        try {
+          const dateObj = new Date(answer);
+          if (!isNaN(dateObj.getTime())) {
+            // Format as long date format
+            answer = dateObj.toLocaleDateString('en-GB', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            });
+          }
+        } catch {
+          // If date parsing fails, use the raw value
+        }
+      }
     }
 
     return toDisplayString(answer);
