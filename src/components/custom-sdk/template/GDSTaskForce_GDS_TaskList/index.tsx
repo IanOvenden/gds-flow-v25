@@ -80,31 +80,31 @@ const TaskListItem = ({ task, index, onTaskClick }: { task: TaskItem; index: num
       case 'completed':
         return (
           <div className='govuk-task-list__status' id={statusId}>
-            Completed
+            <span className='govuk-task-list__status-label'>Completed</span>
           </div>
         );
       case 'incomplete':
         return (
           <div className='govuk-task-list__status' id={statusId}>
-            <strong className='govuk-tag govuk-tag--blue'>Incomplete</strong>
+            <strong className='govuk-tag govuk-task-list__status-label govuk-tag--blue'>Incomplete</strong>
           </div>
         );
       case 'not-started':
         return (
           <div className='govuk-task-list__status' id={statusId}>
-            <strong className='govuk-tag govuk-tag--blue'>Not yet started</strong>
+            <strong className='govuk-tag govuk-task-list__status-label govuk-tag--blue'>Not yet started</strong>
           </div>
         );
       case 'cannot-start':
         return (
           <div className='govuk-task-list__status' id={statusId}>
-            <strong className='govuk-tag'>Cannot start yet</strong>
+            <strong className='govuk-tag govuk-task-list__status-label'>Cannot start yet</strong>
           </div>
         );
       default:
         return (
-          <div className='govuk-task-list__status govuk-tag--blue' id={statusId}>
-            Not yet started
+          <div className='govuk-task-list__status' id={statusId}>
+            <strong className='govuk-tag govuk-task-list__status-label govuk-tag--blue'>Not yet started</strong>
           </div>
         );
     }
