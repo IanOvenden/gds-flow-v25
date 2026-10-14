@@ -57,6 +57,8 @@ const debugLog = (...args: any[]) => {
   }
 };
 
+const getRawStatus = (item: any): string => item.Status || item.pyStatusWork || item.pyStatus || 'not-started';
+
 /**
  * Renders a GDS-compliant task list component
  * @param task - Task item to render
@@ -76,38 +78,26 @@ const TaskListItem = ({ task, index, onTaskClick }: { task: TaskItem; index: num
   };
 
   const renderStatus = () => {
-    switch (task.status) {
-      case 'completed':
-        return (
-          <div className='govuk-task-list__status' id={statusId}>
-            <span className='govuk-task-list__status-label'>Completed</span>
-          </div>
-        );
-      case 'incomplete':
-        return (
-          <div className='govuk-task-list__status' id={statusId}>
-            <strong className='govuk-tag govuk-task-list__status-label govuk-tag--blue'>Incomplete</strong>
-          </div>
-        );
-      case 'not-started':
-        return (
-          <div className='govuk-task-list__status' id={statusId}>
-            <strong className='govuk-tag govuk-task-list__status-label govuk-tag--blue'>Not yet started</strong>
-          </div>
-        );
-      case 'cannot-start':
-        return (
-          <div className='govuk-task-list__status' id={statusId}>
-            <strong className='govuk-tag govuk-task-list__status-label'>Cannot start yet</strong>
-          </div>
-        );
-      default:
-        return (
-          <div className='govuk-task-list__status' id={statusId}>
-            <strong className='govuk-tag govuk-task-list__status-label govuk-tag--blue'>Not yet started</strong>
-          </div>
-        );
+    const label = task.status === 'problem' ? 'There is a problem' : (task.statusLabel ?? task.status);
+
+    if (task.status === 'completed') {
+      return (
+        <div className='govuk-task-list__status' id={statusId}>
+          {label}
+        </div>
+      );
     }
+
+    const tagClasses: Partial<Record<TaskItem['status'], string>> = {
+      'cannot-start': 'govuk-tag',
+      problem: 'govuk-tag govuk-tag--red'
+    };
+    const tagClass = tagClasses[task.status] ?? 'govuk-tag govuk-tag--blue';
+    return (
+      <div className='govuk-task-list__status' id={statusId}>
+        <strong className={tagClass}>{label}</strong>
+      </div>
+    );
   };
 
   return (
@@ -138,6 +128,10 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
   // Normalize status from Pega to GDS format
   const normalizeStatus = useCallback((status: string): TaskItem['status'] => {
     const normalized = status?.toLowerCase() || '';
+
+    if (normalized === 'resolved-error') {
+      return 'problem';
+    }
 
     // Check incomplete first before complete to avoid false matches
     if (normalized.includes('incomplete') || normalized === 'open' || normalized === 'new') {
@@ -302,7 +296,8 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
               return {
                 id: taskID,
                 name: taskName,
-                status: normalizeStatus(item.Status || item.pyStatusWork || item.pyStatus || 'not-started'),
+                status: normalizeStatus(getRawStatus(item)),
+                statusLabel: getRawStatus(item),
                 hint: item.TaskDescription || item.Hint || item.pyDescription || item.Description,
                 href: taskHref,
                 action: matchedProcess // Store the matched process for potential future use
@@ -337,7 +332,8 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
               return {
                 id: taskID,
                 name: taskName,
-                status: normalizeStatus(item.Status || item.pyStatusWork || item.pyStatus || 'not-started'),
+                status: normalizeStatus(getRawStatus(item)),
+                statusLabel: getRawStatus(item),
                 hint: item.TaskDescription || item.Hint || item.pyDescription || item.Description,
                 href: taskHref,
                 action: matchedProcess
