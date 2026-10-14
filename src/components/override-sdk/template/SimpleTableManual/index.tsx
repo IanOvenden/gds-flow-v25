@@ -3,6 +3,7 @@ import type { PConnProps } from '@pega/react-sdk-components/lib/types/PConnProps
 import { buildFieldsForTable, getContext } from '@pega/react-sdk-components/lib/components/helpers/simpleTableHelpers';
 import { getReferenceList } from '@pega/react-sdk-components/lib/components/helpers/field-group-utils';
 import createPConnectComponent from '@pega/react-sdk-components/lib/bridge/react_pconnect';
+import handleEvent from '@pega/react-sdk-components/lib/components/helpers/event-utils';
 
 interface SimpleTableManualProps extends PConnProps {
   hideAddRow?: boolean;
@@ -162,41 +163,23 @@ export default function SimpleTableManual(props: SimpleTableManualProps) {
   }, []); // run once on mount
 
   /** Find the Continue / submit button in the current assignment panel */
-  const findContinueButton = (): HTMLButtonElement | undefined =>
-    Array.from(document.querySelectorAll<HTMLButtonElement>('button.govuk-button')).find(btn => btn.textContent?.trim() === 'Continue');
+  // const findContinueButton = (): HTMLButtonElement | undefined =>
+  //   Array.from(document.querySelectorAll<HTMLButtonElement>('button.govuk-button')).find(btn => btn.textContent?.trim() === 'Continue');
 
-  const addRecord = () => {
-    if (allowEditingInModal && defaultView) {
-      (pConn as any)
-        .getActionsApi()
-        .openEmbeddedDataModal(defaultView, pConn, referenceListStr, referenceList.length, (PCore as any).getConstants().RESOURCE_STATUS.CREATE);
-      return;
+  const addRecord = async () => {
+    const pConn = getPConnect();
+    const actionsApi = pConn.getActionsApi();
+    const itemKey = pConn.getContextName();
+
+    // Don't hardcode 'AddAnItem' if you can avoid it — but if you must:
+    handleEvent(actionsApi, 'changeNblur', '.AddAnItem', true as unknown as string);
+
+    try {
+      await actionsApi.finishAssignment(itemKey);
+    } catch (err) {
+      // validation failures land here — messages go into the store
+      console.error('finishAssignment failed', err);
     }
-
-    // Locate the hidden "Would you like to add an address?" MUI checkbox and
-    // check it, then programmatically submit the form.
-    const formColumn = containerRef.current?.closest('.psdk-default-form-one-column');
-    const checkboxInput = formColumn?.querySelector<HTMLInputElement>('.MuiFormControl-root input[type="checkbox"]');
-
-    if (checkboxInput) {
-      if (!checkboxInput.checked) {
-        // Click the MuiButtonBase span that wraps the input so React/MUI fires
-        // the onChange handler and Pega registers the field update.
-        const muiBtn = checkboxInput.closest<HTMLElement>('.MuiButtonBase-root');
-        muiBtn?.click();
-      }
-      // Allow Pega a brief moment to process the field-change event, then submit.
-      setTimeout(() => {
-        findContinueButton()?.click();
-      }, 400);
-    } else {
-      // Fallback: no hidden checkbox found, submit directly.
-      findContinueButton()?.click();
-    }
-
-    getPConnect().clearErrorMessages({
-      property: (getPConnect().getStateProps() as any)?.referenceList?.substring(1)
-    });
   };
 
   const changeRecord = (index: number) => {
