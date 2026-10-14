@@ -111,9 +111,11 @@ export default function ActionButtons({ getPConnect, arMainButtons = [], arSecon
   };
 
   const handleSecondaryButtonClick = (jsAction: string, type: 'primary' | 'secondary', button?: ActionButton) => {
-    if (button?.name?.toLowerCase().includes('continue') ||
-        button?.name?.toLowerCase().includes('save') ||
-        button?.name?.toLowerCase().includes('later')) {
+    if (
+      button?.name?.toLowerCase().includes('continue') ||
+      button?.name?.toLowerCase().includes('save') ||
+      button?.name?.toLowerCase().includes('later')
+    ) {
       clearCameFromStartPageCookie();
     }
     onButtonPress(jsAction, type, button);
@@ -210,7 +212,11 @@ export default function ActionButtons({ getPConnect, arMainButtons = [], arSecon
         .filter(b => !isRealPreviousButton(b) && !b.name?.toLowerCase().includes('cancel'))
         .map(btn =>
           btn.name?.toLowerCase().includes('later') ? null : (
-            <button key={btn.name} className='govuk-button govuk-button--secondary' onClick={() => handleSecondaryButtonClick(btn.jsAction, 'secondary', btn)}>
+            <button
+              key={btn.name}
+              className='govuk-button govuk-button--secondary'
+              onClick={() => handleSecondaryButtonClick(btn.jsAction, 'secondary', btn)}
+            >
               {renderLabel(btn.name)}
             </button>
           )
