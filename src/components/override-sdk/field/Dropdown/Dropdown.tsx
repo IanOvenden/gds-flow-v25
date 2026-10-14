@@ -71,6 +71,7 @@ export default function Dropdown(props: DropdownProps) {
     helperText,
     deferDatasource,
     datasourceMetadata,
+    displayMode,
     hideLabel,
     onRecordChange,
     fieldMetadata
@@ -173,6 +174,11 @@ export default function Dropdown(props: DropdownProps) {
   };
 
   if (options.length === 0) return null;
+
+  if (displayMode === 'DISPLAY_ONLY') {
+    const selectedText = options.find(o => o.key === value)?.value || value;
+    return <FieldValueList name={hideLabel ? '' : label} value={localize(selectedText)} />;
+  }
 
   if (readOnly) {
     const selectedText = options.find(o => o.key === value)?.value || value;

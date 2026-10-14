@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { usePegaAuth } from '../context/PegaAuthProvider';
 import { usePega } from '../context/PegaReadyContext';
+import { setCameFromStartPageCookie } from '../../../utils/cookieUtils';
 
 import ResolutionScreen from '../ResolutionScreen';
 
@@ -44,12 +45,14 @@ export default function MainScreen() {
   };
 
   const createPoultryCase = async () => {
+    setCameFromStartPageCookie();
     PCore.getMashupApi().createCase('OBMN01-PoultryM-Work-ApplicationIntake', PCore.getConstants().APP.APP, {});
     setShowLandingPage(false);
     setShowPega(true);
   };
 
   const createNotifyAvianDiseaseCase = async () => {
+    setCameFromStartPageCookie();
     PCore.getMashupApi().createCase('OBMN01-PoultryM-Work-DiseaseNotification', PCore.getConstants().APP.APP, {});
     setShowLandingPage(false);
     setShowPega(true);

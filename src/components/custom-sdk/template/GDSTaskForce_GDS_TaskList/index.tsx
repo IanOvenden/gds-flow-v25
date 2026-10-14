@@ -4,6 +4,7 @@ import { getInstructions } from '@pega/react-sdk-components/lib/components/helpe
 
 import { PConnProps } from '@pega/react-sdk-components/lib/types/PConnProps';
 import { TaskItem } from './types';
+import { clearCameFromStartPageCookie } from '../../../../utils/cookieUtils';
 
 import StyledGdsTaskForceGdsTaskListWrapper from './styles';
 
@@ -361,6 +362,8 @@ export default function GdsTaskForceGdsTaskList(props: PropsWithChildren<GdsTask
         console.warn('No action available for task:', task.name);
         return;
       }
+
+      clearCameFromStartPageCookie();
 
       try {
         const pConnect = getPConnect();

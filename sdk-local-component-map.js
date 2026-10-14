@@ -19,6 +19,7 @@ import Integer from './src/components/override-sdk/field/Integer/';
 import Decimal from './src/components/override-sdk/field/Decimal/';
 import DataReference from './src/components/override-sdk/template/DataReference';
 
+import Checkbox from './src/components/override-sdk/field/Checkbox/';
 /* import end - DO NOT REMOVE */
 
 // localSdkComponentMap is the JSON object where we'll store the components that are
@@ -42,7 +43,8 @@ const localSdkComponentMap = {
   Email: Email,
   Integer: Integer,
   Decimal: Decimal,
-  DataReference: DataReference
+  DataReference: DataReference,
+  Checkbox: Checkbox
   /* map end - DO NOT REMOVE */
 };
 

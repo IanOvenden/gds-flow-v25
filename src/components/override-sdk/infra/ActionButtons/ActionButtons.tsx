@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { BackButtonPortalContext } from '../FlowContainer/BackButtonPortalContext';
+import { clearCameFromStartPageCookie, getCameFromStartPageCookie } from '../../../../utils/cookieUtils';
 
 interface ActionButton {
   name: string;
@@ -102,13 +103,31 @@ export default function ActionButtons({ getPConnect, arMainButtons = [], arSecon
   };
 
   const runPrimaryAdvance = () => {
+    clearCameFromStartPageCookie();
     const btn = primaryAdvance ?? arMainButtons[0];
     if (btn?.jsAction) {
       onButtonPress(btn.jsAction, 'primary', btn);
     }
   };
 
+  const handleSecondaryButtonClick = (jsAction: string, type: 'primary' | 'secondary', button?: ActionButton) => {
+    if (
+      button?.name?.toLowerCase().includes('continue') ||
+      button?.name?.toLowerCase().includes('save') ||
+      button?.name?.toLowerCase().includes('later')
+    ) {
+      clearCameFromStartPageCookie();
+    }
+    onButtonPress(jsAction, type, button);
+  };
+
   const handleBackClick = async () => {
+    // If back clicked right after creating case, exit to landing page
+    if (getCameFromStartPageCookie()) {
+      onButtonPress('cancelAssignment', 'secondary');
+      return;
+    }
+
     const inputEl = document.querySelector(CYATARGET_SELECTOR) as HTMLInputElement | null;
     const cyaValue = inputEl?.value;
 
@@ -193,7 +212,11 @@ export default function ActionButtons({ getPConnect, arMainButtons = [], arSecon
         .filter(b => !isRealPreviousButton(b) && !b.name?.toLowerCase().includes('cancel'))
         .map(btn =>
           btn.name?.toLowerCase().includes('later') ? null : (
-            <button key={btn.name} className='govuk-button govuk-button--secondary' onClick={() => onButtonPress(btn.jsAction, 'secondary', btn)}>
+            <button
+              key={btn.name}
+              className='govuk-button govuk-button--secondary'
+              onClick={() => handleSecondaryButtonClick(btn.jsAction, 'secondary', btn)}
+            >
               {renderLabel(btn.name)}
             </button>
           )
@@ -208,7 +231,7 @@ export default function ActionButtons({ getPConnect, arMainButtons = [], arSecon
               className='govuk-link'
               onClick={e => {
                 e.preventDefault();
-                onButtonPress(btn.jsAction, 'secondary', btn);
+                handleSecondaryButtonClick(btn.jsAction, 'secondary', btn);
               }}
             >
               {renderLabel(btn.name)}
