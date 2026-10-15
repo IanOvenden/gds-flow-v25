@@ -137,15 +137,16 @@ export default function ActionButtons({ getPConnect, arMainButtons = [], arSecon
       const editableFields = PCore.getFormUtils().getEditableFields(contextName) ?? [];
 
       const editableFieldNames = editableFields.map((field: any) => {
-        let name = field.name ?? '';
-        name = name.startsWith('caseInfo.content.') ? name.replace('caseInfo.content.', '') : name;
-        const baseFieldName = name.split('[')[0];
-        const dotCount = (baseFieldName.match(/\./g) || []).length;
-        return dotCount > 1 ? baseFieldName.substring(0, baseFieldName.lastIndexOf('.')) : baseFieldName;
+        const name: string = field.name ?? '';
+        const lastSegment = name.substring(name.lastIndexOf('.') + 1);
+        return lastSegment.split('[')[0];
       });
 
+      // Compare against only the part of the CYA value after its last full stop
+      const cyaCompareValue = cyaValue?.substring(cyaValue.lastIndexOf('.') + 1);
+
       // Check if CYA value matches any of the editable field names
-      const cyaMatchesEditableField = editableFieldNames.some((fieldName: string) => fieldName === cyaValue);
+      const cyaMatchesEditableField = editableFieldNames.some((fieldName: string) => fieldName === cyaCompareValue);
 
       if (!cyaMatchesEditableField) {
         runRealPrevious();
