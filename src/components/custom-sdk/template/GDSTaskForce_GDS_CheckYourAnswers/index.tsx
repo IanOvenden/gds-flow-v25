@@ -1,6 +1,7 @@
-import { createElement, PropsWithChildren } from 'react';
+import { createElement, Fragment, PropsWithChildren } from 'react';
 
 import { getInstructions } from '@pega/react-sdk-components/lib/components/helpers/template-utils';
+import { buildFieldsForTable } from '@pega/react-sdk-components/lib/components/helpers/simpleTableHelpers';
 import createPConnectComponent from '@pega/react-sdk-components/lib/bridge/react_pconnect';
 import connectToState from '@pega/react-sdk-components/lib/components/helpers/state-utils';
 
@@ -15,12 +16,120 @@ interface GdsTaskForceGdsCheckYourAnswersProps extends PConnProps {
   instructions: string;
 }
 
+type QAAnswer = string | Record<string, any> | Record<string, any>[];
+
 type QAEntry = {
   key: string;
   question: string;
-  answer: string;
+  answer: QAAnswer;
   propRef?: string;
+  // Field metadata label (e.g. "Flock Groups") used to title summary cards as "Flock Group 1", "Flock Group 2"...
+  cardLabel?: string;
+  // Property key -> display label for summary card rows (e.g. poultryType -> "Poultry type")
+  propertyLabels?: Record<string, string>;
+  // Property keys whose values are dates (e.g. dateAcquired) – formatted the same as other date answers
+  dateProperties?: string[];
 };
+
+/** Formats an ISO-style date string as a long en-GB date (e.g. "15 January 2024"); returns the raw value if unparseable. */
+function formatLongDate(value: string): string {
+  try {
+    const dateObj = new Date(value);
+    if (!isNaN(dateObj.getTime())) {
+      return dateObj.toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+  } catch {
+    // If date parsing fails, use the raw value
+  }
+  return value;
+}
+
+/**
+ * Resolves property labels and date-typed properties for a table-style (authorContext) field:
+ * - Table columns, the same way SimpleTableManual does (label + column component type)
+ * - Falls back to class property metadata for anything missed
+ */
+function getPropertyMeta(pConn: any, config: any, propName: string, keys: string[]): { labels: Record<string, string>; dateProperties: string[] } {
+  const labels: Record<string, string> = {};
+  const dateProperties = new Set<string>();
+
+  try {
+    const rawConfig = pConn.getRawMetadata?.()?.config;
+    const rawFields: any[] = rawConfig?.children?.[0]?.children || rawConfig?.presets?.[0]?.children?.[0]?.children || [];
+    const resolvedFields: any[] = config?.children?.[0]?.children || config?.presets?.[0]?.children?.[0]?.children || [];
+
+    if (rawFields.length > 0 && resolvedFields.length > 0) {
+      const primaryFieldsViewIndex = resolvedFields.findIndex((f: any) => f?.config?.value === 'pyPrimaryFields');
+      buildFieldsForTable(rawFields, pConn, false, { primaryFieldsViewIndex, fields: resolvedFields }).forEach((fieldDef: any) => {
+        if (!fieldDef?.name) return;
+        if (fieldDef.label) labels[fieldDef.name] = fieldDef.label;
+        if (fieldDef.meta?.type === 'Date') dateProperties.add(fieldDef.name);
+      });
+    }
+  } catch {
+    // ignore – fall back to property metadata below
+  }
+
+  const pageClass = pConn.getFieldMetadata?.(propName)?.pageClass;
+  if (pageClass) {
+    keys.forEach(key => {
+      const propMeta = PCore.getMetadataUtils().getPropertyMetadata(key, pageClass) as any;
+      if (!labels[key] && propMeta?.label) labels[key] = propMeta.label;
+      if (propMeta?.type === 'Date') dateProperties.add(key);
+    });
+  }
+
+  return { labels, dateProperties: [...dateProperties] };
+}
+
+function getCardTitle(entry: QAEntry, idx: number, total: number): string {
+  if (entry.cardLabel) {
+    const singular = entry.cardLabel.endsWith('s') ? entry.cardLabel.slice(0, -1) : entry.cardLabel;
+    return `${singular} ${idx + 1}`;
+  }
+  return total > 1 ? `${entry.question} ${idx + 1}` : entry.question;
+}
+
+// Consecutive string answers share one summary list; object answers render as summary cards
+type QASegment = { kind: 'list'; key: string; entries: QAEntry[] } | { kind: 'cards'; key: string; entry: QAEntry };
+
+function isSystemField(key: string): boolean {
+  return key === 'classID' || key.startsWith('py');
+}
+
+/** Normalises an object/array-of-objects answer into a list of objects (non-objects dropped). */
+function toAnswerObjects(answer: QAAnswer): Record<string, any>[] {
+  if (typeof answer === 'string') return [];
+  const items = Array.isArray(answer) ? answer : [answer];
+  return items.filter(item => typeof item === 'object' && item !== null);
+}
+
+function hasAnswer(answer: QAAnswer | undefined): boolean {
+  if (answer === undefined) return false;
+  if (typeof answer === 'string') return answer.trim() !== '';
+  return toAnswerObjects(answer).length > 0;
+}
+
+function groupIntoSegments(entries: QAEntry[]): QASegment[] {
+  const segments: QASegment[] = [];
+  for (const entry of entries) {
+    if (typeof entry.answer !== 'string') {
+      segments.push({ kind: 'cards', key: `cards-${entry.key}`, entry });
+      continue;
+    }
+    const last = segments[segments.length - 1];
+    if (last?.kind === 'list') {
+      last.entries.push(entry);
+    } else {
+      segments.push({ kind: 'list', key: `list-${entry.key}`, entries: [entry] });
+    }
+  }
+  return segments;
+}
 
 const Child: React.ComponentType<any> = connectToState(mapStateToProps)((props: any) => {
   const { key, visibility, ...rest } = props;
@@ -36,6 +145,19 @@ function toDisplayString(v: any): string {
   } catch {
     return String(v);
   }
+}
+
+/**
+ * Flattens a nested object/array answer into a display string for rendering,
+ * skipping system fields (classID, py*).
+ */
+function formatContextPart(part: any): string {
+  if (part === null || typeof part !== 'object') return toDisplayString(part);
+  return Object.entries(part)
+    .filter(([key]) => !isSystemField(key))
+    .map(([, value]) => formatContextPart(value))
+    .filter(val => val.trim())
+    .join(', ');
 }
 
 /**
@@ -113,19 +235,7 @@ function getAnswerFromKid(kid: any): string {
       const fieldType = metadata?.type;
 
       if (fieldType === 'Date') {
-        try {
-          const dateObj = new Date(answer);
-          if (!isNaN(dateObj.getTime())) {
-            // Format as long date format
-            answer = dateObj.toLocaleDateString('en-GB', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            });
-          }
-        } catch {
-          // If date parsing fails, use the raw value
-        }
+        answer = formatLongDate(answer);
       }
     }
 
@@ -156,6 +266,8 @@ function extractQAFromChildren(arChildren: any[]): QAEntry[] {
 
     // Skip only CYA Target
     if (question === 'CYA Target') continue;
+    // Skip CYA TArget Index
+    if (question === 'CYA Target Index') continue;
 
     const config = pConn.getConfigProps?.();
 
@@ -203,9 +315,11 @@ function extractQAFromChildren(arChildren: any[]): QAEntry[] {
       const rawPropRef = contextPath as string | undefined;
       const propRef = rawPropRef?.startsWith('.') ? rawPropRef.slice(1) : rawPropRef;
       const contextData = pConn.getValue?.(contextPath);
+      const propName = PCore.getAnnotationUtils().getPropertyName(contextPath); // e.g. "FlockGroups"
+      const cardLabel = pConn.getFieldMetadata(propName)?.label as string | undefined; // e.g. "Flock Groups"
 
       if (contextData !== undefined && contextData !== null) {
-        let answer = '';
+        let answer: QAAnswer = '';
 
         // If it's an object, extract meaningful fields (filter out system fields)
         if (typeof contextData === 'object') {
@@ -214,17 +328,26 @@ function extractQAFromChildren(arChildren: any[]): QAEntry[] {
             .map(([, value]) => value)
             .filter(val => val && val.toString().trim());
 
-          answer = meaningfulParts.join(', ');
+          const hasObjectParts = meaningfulParts.some(part => typeof part === 'object' && part !== null);
+
+          // Keep nested objects as-is so they can be worked with later
+          answer = hasObjectParts ? (meaningfulParts as Record<string, any>[]) : meaningfulParts.join(', ');
         } else {
           answer = toDisplayString(contextData);
         }
 
-        if (answer.trim()) {
+        if (hasAnswer(answer)) {
+          const answerKeys = [...new Set(toAnswerObjects(answer).flatMap(obj => Object.keys(obj)))];
+          const propertyMeta = answerKeys.length > 0 ? getPropertyMeta(pConn, config, propName, answerKeys) : undefined;
+
           out.push({
             key: propRef ?? question ?? Math.random().toString(16),
             question,
             answer,
-            propRef
+            propRef,
+            cardLabel,
+            propertyLabels: propertyMeta?.labels,
+            dateProperties: propertyMeta?.dateProperties
           });
         }
       }
@@ -259,7 +382,7 @@ function consolidateComplainantName(qaEntries: QAEntry[]): QAEntry[] {
     .filter(entry => nameFields.includes(entry.question))
     .sort((a, b) => nameFields.indexOf(a.question) - nameFields.indexOf(b.question))
     .map(entry => entry.answer)
-    .filter(answer => answer && answer.trim())
+    .filter((answer): answer is string => typeof answer === 'string' && answer.trim() !== '')
     .join(' ');
 
   if (nameParts) {
@@ -275,21 +398,60 @@ function consolidateComplainantName(qaEntries: QAEntry[]): QAEntry[] {
   return filtered;
 }
 
-function setCYATargetAndAdvance(targetValue: string) {
-  const CYA_Target_Element = document.querySelector('#CYATarget') as HTMLSelectElement | null;
+/** Finds the PConnect of the child field with the given label (e.g. the hidden CYA Target fields). */
+function findChildPConnByLabel(arChildren: any[], label: string): any {
+  const kid = arChildren?.find((child: any) => {
+    const pConn = child?.getPConnect?.();
+    return pConn && getQuestionLabel(pConn) === label;
+  });
+  return kid?.getPConnect?.();
+}
 
-  if (CYA_Target_Element) {
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-    if (nativeInputValueSetter) {
-      nativeInputValueSetter.call(CYA_Target_Element, targetValue);
-    }
-    CYA_Target_Element.dispatchEvent(new Event('input', { bubbles: true }));
-    CYA_Target_Element.dispatchEvent(new Event('change', { bubbles: true }));
+/**
+ * Writes a value straight into the Pega store via the field's actions API.
+ * Setting the DOM input isn't enough: some field components (e.g. Integer) only commit on blur.
+ */
+function setFieldValue(pConn: any, value: string, label: string) {
+  const propName = pConn?.getStateProps?.()?.value;
+  if (!propName) {
+    console.warn(`CheckYourAnswers: "${label}" field not found, value not set`);
+    return;
+  }
+  const actions = pConn.getActionsApi();
+  actions.updateFieldValue(propName, value);
+  actions.triggerFieldChange(propName, value);
+}
+
+/**
+ * Sets CYATarget (and, for summary card rows, the 1-based CYATargetIndex of the answer group)
+ * then triggers the primary action.
+ */
+function setCYATargetAndAdvance(arChildren: any[], targetValue: string, targetIndex?: number) {
+  setFieldValue(findChildPConnByLabel(arChildren, 'CYA Target'), targetValue, 'CYA Target');
+
+  if (targetIndex !== undefined) {
+    setFieldValue(findChildPConnByLabel(arChildren, 'CYA Target Index'), String(targetIndex), 'CYA Target Index');
   }
 
   // Trigger primary action (Continue/Next)
   const primaryBtn = document.querySelector('.govuk-button-group .govuk-button') as HTMLButtonElement | null;
   primaryBtn?.click();
+}
+
+function ChangeLink({ onChange, label }: { onChange?: () => void; label?: string }) {
+  return (
+    <a
+      href='#'
+      className='govuk-link'
+      onClick={e => {
+        e.preventDefault();
+        onChange?.();
+      }}
+    >
+      Change
+      <span className='govuk-visually-hidden'> {label?.toLowerCase()}</span>
+    </a>
+  );
 }
 
 export default function GdsTaskForceGdsCheckYourAnswers(props: PropsWithChildren<GdsTaskForceGdsCheckYourAnswersProps>) {
@@ -318,6 +480,10 @@ export default function GdsTaskForceGdsCheckYourAnswers(props: PropsWithChildren
   const arChildren = getPConnect().getChildren()[0].getPConnect().getChildren();
 
   const qaEntries = consolidateComplainantName(extractQAFromChildren(arChildren));
+  const segments = groupIntoSegments(qaEntries);
+
+  const goToChange = (propRef?: string, targetIndex?: number) =>
+    propRef ? () => setCYATargetAndAdvance(arChildren, propRef, targetIndex) : undefined;
 
   // Render only non-QA children “as normal”.
   // We also keep the CYATarget component itself rendered (it will be hidden/shown by your Dropdown logic).
@@ -341,6 +507,8 @@ export default function GdsTaskForceGdsCheckYourAnswers(props: PropsWithChildren
 
       // Keep CYATarget rendered (needed for navigation)
       if (question === 'CYA Target') return true;
+      // Keep CYA Index
+      if (question === 'CYA Target Index') return true;
 
       // All other Q/A fields are rendered in the summary list instead
       return false;
@@ -356,36 +524,65 @@ export default function GdsTaskForceGdsCheckYourAnswers(props: PropsWithChildren
           </div>
         )}
 
-        {/* GOV.UK Summary List */}
-        <div className='govuk-summary-list govuk-!-margin-bottom-9'>
-          {qaEntries.map(({ key, question, answer, propRef }) => {
+        {segments.map(segment => {
+          if (segment.kind === 'list') {
+            // GOV.UK Summary List for plain string answers
             return (
-              <div className='govuk-summary-list__row' key={key}>
-                <dt className='govuk-summary-list__key'>{question}</dt>
+              <dl className='govuk-summary-list govuk-!-margin-bottom-9' key={segment.key}>
+                {segment.entries.map(({ key, question, answer, propRef }) => (
+                  <div className='govuk-summary-list__row' key={key}>
+                    <dt className='govuk-summary-list__key'>{question}</dt>
 
-                <dd className='govuk-summary-list__value' style={{ whiteSpace: 'pre-wrap' }}>
-                  {answer && answer.trim() ? answer : '—'}
-                </dd>
+                    <dd className='govuk-summary-list__value' style={{ whiteSpace: 'pre-wrap' }}>
+                      {hasAnswer(answer) ? (answer as string) : '—'}
+                    </dd>
 
-                <dd className='govuk-summary-list__actions'>
-                  <a
-                    href='#'
-                    className='govuk-link'
-                    onClick={e => {
-                      e.preventDefault();
-                      if (propRef) {
-                        setCYATargetAndAdvance(propRef);
-                      }
-                    }}
-                  >
-                    Change
-                    <span className='govuk-visually-hidden'> {question?.toLowerCase()}</span>
-                  </a>
-                </dd>
-              </div>
+                    <dd className='govuk-summary-list__actions'>
+                      <ChangeLink onChange={goToChange(propRef)} label={question} />
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             );
-          })}
-        </div>
+          }
+
+          // GOV.UK Summary Card per object in the answer
+          const { key, answer, propRef, propertyLabels, dateProperties } = segment.entry;
+          const answerObjects = toAnswerObjects(answer);
+
+          return (
+            <Fragment key={segment.key}>
+              {segment.entry.cardLabel && <h2 className='govuk-heading-m'>{segment.entry.cardLabel}</h2>}
+              {answerObjects.map((answerObject, idx) => (
+                <div className='govuk-summary-card' key={`${key}-${idx}`}>
+                  <div className='govuk-summary-card__title-wrapper'>
+                    <h2 className='govuk-summary-card__title'>{getCardTitle(segment.entry, idx, answerObjects.length)}</h2>
+                  </div>
+                  <div className='govuk-summary-card__content'>
+                    <dl className='govuk-summary-list'>
+                      {Object.entries(answerObject)
+                        .filter(([prop]) => !isSystemField(prop))
+                        .map(([prop, value]) => (
+                          <div className='govuk-summary-list__row' key={prop}>
+                            <dt className='govuk-summary-list__key'>{propertyLabels?.[prop] ?? prop}</dt>
+                            <dd className='govuk-summary-list__value' style={{ whiteSpace: 'pre-wrap' }}>
+                              {(dateProperties?.includes(prop) && typeof value === 'string' && value
+                                ? formatLongDate(value)
+                                : formatContextPart(value)) || '—'}
+                            </dd>
+                            <dd className='govuk-summary-list__actions'>
+                              {/* CYATarget uses the machine-readable property key, not the display label */}
+                              <ChangeLink onChange={goToChange(propRef && `${propRef}.${prop}`, idx + 1)} label={propertyLabels?.[prop] ?? prop} />
+                            </dd>
+                          </div>
+                        ))}
+                    </dl>
+                  </div>
+                </div>
+              ))}
+            </Fragment>
+          );
+        })}
 
         {/* Any remaining children that should still render normally (incl. CYATarget) */}
         <div className={divClass}>{normalChildren}</div>

@@ -24,7 +24,8 @@
   grid-column: 1 / span 3;
 }
 
-#CYATarget {
+#CYATarget,
+#CYATargetIndex {
   display: none;
 }
 
